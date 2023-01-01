@@ -1,6 +1,6 @@
 # rpistat
 
-*Web-Service to collext Raspberry pi 4 system statistics*
+*Web-Service to collext Raspberry PI 4 system statistics*
 
 [![Donate via PayPal](https://img.shields.io/badge/donate-paypal-87ceeb.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)
 *Please consider supporting this project by making a donation via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)*
@@ -17,13 +17,14 @@
 
 * [Description](#description)
 * [Quick Start](#quickstart)
+* [Home Assistant](#homeassistant)
 
 -----------------------------------------------------------------
 
 <a name="description"></a>
 ## Description
 
-Web-Service to collext Raspberry pi 4 system statistics when running Raspbian 64 bit.
+Web-Service to collext Raspberry PI 4 system statistics.
 
 -----------------------------------------------------------------
 
@@ -66,6 +67,43 @@ To build the executable file:
 make build
 ```
 
+To set the correct target architecture check the GOBUILDENV variable in the Makefile.
 
+
+The build binary will be at:
+```
+target/usr/local/bin/rpistat
+```
+to be copied at
+```
+/usr/local/bin/rpistat
+```
+in the Raspberry Pi.
+```
+chmod +x /usr/local/bin/rpistat
+```
+
+To start automatically the service copy
+```
+resources/etc/systemd/system/rpistat.service
+```
+to the Raspberry pi at:
+```
+/etc/systemd/system/rpistat.service
+```
+```
+sudo systemctl daemon-reload
+sudo systemctl start rpistat
+sudo systemctl status rpistat
+```
 -----------------------------------------------------------------
 
+<a name="homeassistant"></a>
+## Home Assistant Integration
+
+Example sensors and templates for HomeAssistant are available at:
+
+```
+resources/HomeAssistant/
+```
+-----------------------------------------------------------------

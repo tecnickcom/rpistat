@@ -1,0 +1,82 @@
+  - sensor:
+    - unique_id: "rpi_uptime"
+      name: "RPI Uptime"
+      state: >
+        {% set uptime = state_attr('sensor.rpi_system_stats', 'uptime')/1000000000 | int %}
+        {% set days = (uptime / 86400) | int %}
+        {%- if days > 0 -%}
+          {{ days }} days, {{ (uptime - (days * 86400)) | int | timestamp_custom('%H:%M:%S', false) }}
+        {%- else -%}
+          {{ uptime | int | timestamp_custom('%H:%M:%S', false) }}
+        {%- endif -%}
+      icon: mdi:clock-time-four      
+    - unique_id: "rpi_memory_total"
+      name: "RPI Total Memory"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'memory_total')|filesizeformat() }}"
+      icon: mdi:memory
+    - unique_id: "rpi_memory_free"
+      name: "RPI Free Memory"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'memory_free')|filesizeformat() }}"
+      icon: mdi:memory
+    - unique_id: "rpi_memory_used"
+      name: "RPI Used Memory"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'memory_used')|filesizeformat() }}"
+      icon: mdi:memory
+    - unique_id: "rpi_memory_usage"
+      name: "RPI Memory Usage"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'memory_usage')|round(2) }}"
+      unit_of_measurement: "%"
+      icon: mdi:memory
+    - unique_id: "rpi_load_1m"
+      name: "RPI Load (1m)"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'load_1m')|round(2) }}"
+      unit_of_measurement: ""
+      icon: mdi:cpu-64-bit
+    - unique_id: "rpi_load_5m"
+      name: "RPI Load (5m)"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'load_5m')|round(2) }}"
+      unit_of_measurement: ""
+      icon: mdi:cpu-64-bit
+    - unique_id: "rpi_load_15m"
+      name: "RPI Load (15m)"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'load_15m')|round(2) }}"
+      unit_of_measurement: ""
+      icon: mdi:cpu-64-bit
+    - unique_id: "rpi_temperature_cpu"
+      name: "RPI CPU Temperature"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'temperature_cpu')|round(1) }}"
+      unit_of_measurement: "ºC"
+      icon: mdi:thermometer
+    - unique_id: "rpi_disk_total"
+      name: "RPI Total Disk Space"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'disk_total')|filesizeformat() }}"
+      icon: mdi:harddisk
+    - unique_id: "rpi_disk_free"
+      name: "RPI Free Disk Space"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'disk_free')|filesizeformat() }}"
+      icon: mdi:harddisk
+    - unique_id: "rpi_disk_used"
+      name: "RPI Used Disk Space"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'disk_used')|filesizeformat() }}"
+      icon: mdi:harddisk
+    - unique_id: "rpi_disk_usage"
+      name: "RPI Disk Space Usage"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'disk_usage')|round(2) }}"
+      unit_of_measurement: "%"
+      icon: mdi:harddisk
+    - unique_id: "rpi_network_wired_rx"
+      name: "RPI Wired Network Received"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'network')[0]['rx']|filesizeformat() }}"
+      icon: mdi:server-network
+    - unique_id: "rpi_network_wired_tx"
+      name: "RPI Wired Network Transmitted"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'network')[0]['tx']|filesizeformat() }}"
+      icon: mdi:server-network
+    - unique_id: "rpi_network_wireless_rx"
+      name: "RPI Wireless Network Received"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'network')[1]['rx']|filesizeformat() }}"
+      icon: mdi:server-network
+    - unique_id: "rpi_network_wireless_tx"
+      name: "RPI Wireless Network Transmitted"
+      state: "{{ state_attr('sensor.rpi_system_stats', 'network')[1]['tx']|filesizeformat() }}"
+      icon: mdi:server-network

@@ -120,8 +120,8 @@ func (t *Stats) sysinfo() {
 	}
 
 	t.Uptime = time.Duration(u.Uptime) * time.Second
-	t.MemoryTotal = u.Totalram * uint64(u.Unit)
-	t.MemoryFree = u.Freeram * uint64(u.Unit)
+	t.MemoryTotal = uint64(u.Totalram) * uint64(u.Unit) //nolint:unconvert
+	t.MemoryFree = uint64(u.Freeram) * uint64(u.Unit)   //nolint:unconvert
 	t.MemoryUsed = t.MemoryTotal - t.MemoryFree
 	t.MemoryUsage = (float64(t.MemoryUsed) / float64(t.MemoryTotal))
 	t.Load1 = float64(u.Loads[0]) / loadShift

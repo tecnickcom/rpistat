@@ -68,8 +68,12 @@ GOOSARCH=$(shell go env GOOS GOARCH | tr -d \\n)
 # OS and Architecture used to build the Go binary for Docker.
 LINUXGOBUILDENV=GOOS=linux GOARCH=amd64
 
-# Environment variables for the go build command
+# Environment variables for the go build command (uncomment the one that is appropriate:
+# 32bit Raspbian:
+#GOBUILDENV=env GOOS=linux GOARCH=arm GOARM=5
+# 64bit Raspbian:
 GOBUILDENV=env GOOS=linux GOARCH=arm64
+# Current environment
 #GOBUILDENV=
 
 # Directory containing the source code

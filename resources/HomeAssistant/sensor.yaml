@@ -1,5 +1,5 @@
   - platform: rest
-    resource: http://192.168.2.1:65501
+    resource: http://192.168.2.1:65501/stats
     unique_id: rpi_system_stats
     name: "RPI System Stats"
     value_template: 'OK'

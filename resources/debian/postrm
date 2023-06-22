@@ -1,0 +1,10 @@
+#!/bin/sh
+# postrm script for rpistat
+
+set -e
+
+update-rc.d -f rpistat remove
+
+#DEBHELPER#
+
+exit 0

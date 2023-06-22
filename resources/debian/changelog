@@ -1,0 +1,7 @@
+~#PKGNAME#~ (~#VERSION#~-~#RELEASE#~) UNRELEASED; urgency=low
+
+  * Please check the
+    https://github.com/tecnickcom/rpistat
+    commit history
+
+ -- tecnickcom <info@tecnick.com>  ~#DATE#~

@@ -1,0 +1,31 @@
+---
+# yamllint disable rule:line-length
+project:
+  name: rpistat
+  title: rpistat
+  category: Application
+  copyright_start_year: "2020"
+  copyright_owner: tecnickcom
+  license_url: https://github.com/tecnickcom/rpistat/blob/main/LICENSE
+  cvs: https://github.com/tecnickcom/rpistat
+  tagline: Web-Service to collext Raspberry PI 4 system statistics
+  logo: doc/images/logo.png
+team:
+  name: tecnickcom
+  title: tecnickcom
+  info:
+  slack:
+  escalation:
+attachments:
+doclinks:
+  public:
+    general:
+      name: General
+      description: General project documentation
+      links:
+        github:
+          name: GitHup project page
+          url: https://github.com/tecnickcom/rpistat
+slack:
+dependencies:
+environment:

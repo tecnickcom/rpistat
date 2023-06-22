@@ -1,0 +1,15 @@
+Source: ~#PKGNAME#~
+Maintainer: tecnickcom <info@tecnick.com>
+Section: utils
+Priority: optional
+Build-Depends: debhelper (>= 9), dh-golang
+Standards-Version: 3.9.7
+Homepage: https://github.com/tecnickcom/rpistat
+Vcs-Git: https://github.com/tecnickcom/rpistat.git
+
+Package: ~#PKGNAME#~
+Provides: rpistat
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Web-Service to collext Raspberry PI 4 system statistics
+ rpistat : Web-Service to collext Raspberry PI 4 system statistics

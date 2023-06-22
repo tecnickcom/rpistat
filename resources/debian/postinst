@@ -1,0 +1,10 @@
+#!/bin/sh
+# postinst script for rpistat
+
+set -e
+
+update-rc.d -f rpistat defaults
+
+#DEBHELPER#
+
+exit 0

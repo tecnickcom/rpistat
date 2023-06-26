@@ -8,6 +8,7 @@ import (
 
 	"github.com/Vonage/gosrvlib/pkg/testutil"
 	"github.com/stretchr/testify/require"
+	"github.com/tecnickcom/rpistat/internal/metrics"
 )
 
 func TestNew(t *testing.T) {
@@ -20,7 +21,8 @@ func TestNew(t *testing.T) {
 func TestHTTPHandler_BindHTTP(t *testing.T) {
 	t.Parallel()
 
-	h := &HTTPHandler{}
+	mtr := metrics.New()
+	h := &HTTPHandler{mtr}
 	got := h.BindHTTP(testutil.Context())
 	require.Equal(t, 1, len(got))
 }
@@ -31,7 +33,9 @@ func TestHTTPHandler_handleStats(t *testing.T) {
 	rr := httptest.NewRecorder()
 	req, _ := http.NewRequestWithContext(testutil.Context(), http.MethodGet, "/", nil)
 
-	(&HTTPHandler{}).handleStats(rr, req)
+	mtr := metrics.New()
+	h := &HTTPHandler{mtr}
+	h.handleStats(rr, req)
 
 	resp := rr.Result()
 	require.NotNil(t, resp)

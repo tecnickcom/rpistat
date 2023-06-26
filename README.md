@@ -40,6 +40,8 @@ The statistics are exposed both via the ```/stats``` API endpoint.
 
 An example HomeAssistant sensor and template to scrape those metrics can be found in the ```resources/HomeAssistant/``` directory.
 
+Other system statistics are available via Prometheus at ```/metrics```.
+
 
 ----------
 

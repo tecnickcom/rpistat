@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tecnickcom/rpistat/internal/metrics"
 	"golang.org/x/sys/unix"
 )
 
@@ -18,11 +19,16 @@ const (
 	fileNetworkStat = "/proc/net/dev"
 )
 
-// NetworkStat contains network statistics for one phisical interface.
+// NetworkStat contains network statistics for one physical interface.
 type NetworkStat struct {
+	// NIC is the Network Interface Card name.
 	Nic string `json:"nic"`
-	Rx  uint64 `json:"rx"`
-	Tx  uint64 `json:"tx"`
+
+	// Rx is the total number of bytes received.
+	Rx uint64 `json:"rx"`
+
+	// Tx is the total number of bytes transmitted.
+	Tx uint64 `json:"tx"`
 }
 
 // Stats contains the information to be returned.
@@ -36,53 +42,56 @@ type Stats struct {
 	// Hostname name of the host.
 	Hostname string `json:"hostname"`
 
-	// Uptime time since last system boot.
+	// Uptime time elapsed since last system boot.
 	Uptime time.Duration `json:"uptime"`
 
-	// Total Memory in bytes.
+	// MemoryTotal is the total available memory in bytes.
 	MemoryTotal uint64 `json:"memory_total"`
 
-	// Total free memory in bytes.
+	// MemoryFree is the total free memory in bytes.
 	MemoryFree uint64 `json:"memory_free"`
 
-	// Total memory used in bytes.
+	// MemoryUsed is the total memory used in bytes.
 	MemoryUsed uint64 `json:"memory_used"`
 
-	// Total memory used in percentage
+	// MemoryUsage is the total memory used in percentage
 	MemoryUsage float64 `json:"memory_usage"`
 
-	// Load is the 1 minute load average.
+	// Load1 is the 1 minute load average.
 	Load1 float64 `json:"load_1m"`
 
-	// Load is the 5 minute load average.
+	// Load5 is the 5 minutes load average.
 	Load5 float64 `json:"load_5m"`
 
-	// Load is the 15 minute load average.
+	// Load15 is the 15 minutes load average.
 	Load15 float64 `json:"load_15m"`
 
-	// CPU Temperature in Celsius Degrees.
+	// TempCPU is the CPU Temperature in Celsius Degrees.
 	TempCPU float64 `json:"temperature_cpu"`
 
-	// Total Disk size in bytes.
+	// DiskTotal is the total disk size in bytes.
 	DiskTotal uint64 `json:"disk_total"`
 
-	// Total free disk space in bytes.
+	// DiskFree is the total free disk space in bytes.
 	DiskFree uint64 `json:"disk_free"`
 
-	// Total disk used in bytes.
+	// DiskUsed is the total disk used in bytes.
 	DiskUsed uint64 `json:"disk_used"`
 
-	// Total disk used in percentage
+	// DiskUsage is the total disk used in percentage
 	DiskUsage float64 `json:"disk_usage"`
 
 	// Network contains an array of network statistics, one entry for each physical interface.
 	Network []NetworkStat `json:"network"`
+
+	metric metrics.Metrics
 }
 
-func newStats() *Stats {
+func newStats(m metrics.Metrics) *Stats {
 	now := time.Now().UTC()
 
 	t := &Stats{
+		metric:    m,
 		DateTime:  now.Format(time.RFC3339),
 		Timestamp: now.UnixNano(),
 	}
@@ -117,6 +126,14 @@ func (t *Stats) sysinfo() {
 	t.Load1 = float64(u.Loads[0]) / loadShift
 	t.Load5 = float64(u.Loads[1]) / loadShift
 	t.Load15 = float64(u.Loads[2]) / loadShift
+
+	// metrics
+	t.metric.SetUptime(t.Uptime)
+	t.metric.SetMemoryTotal(t.MemoryTotal)
+	t.metric.SetMemoryFree(t.MemoryFree)
+	t.metric.SetLoad1(t.Load1)
+	t.metric.SetLoad5(t.Load5)
+	t.metric.SetLoad15(t.Load15)
 }
 
 func (t *Stats) cpuTemp() {
@@ -137,6 +154,8 @@ func (t *Stats) cpuTemp() {
 	}
 
 	t.TempCPU = float64(raw) / 1000
+
+	t.metric.SetTempCPU(t.TempCPU)
 }
 
 func (t *Stats) disk() {
@@ -151,6 +170,9 @@ func (t *Stats) disk() {
 	t.DiskFree = f.Bfree * uint64(f.Bsize)
 	t.DiskUsed = t.DiskTotal - t.DiskFree
 	t.DiskUsage = (float64(t.DiskUsed) / float64(t.DiskTotal))
+
+	t.metric.SetDiskTotal(t.DiskTotal)
+	t.metric.SetDiskFree(t.DiskFree)
 }
 
 //nolint:gocognit
@@ -196,5 +218,7 @@ func (t *Stats) network() {
 				Tx:  tx,
 			},
 		)
+
+		t.metric.SetNetwork(nic, rx, tx)
 	}
 }

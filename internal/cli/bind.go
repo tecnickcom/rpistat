@@ -50,7 +50,7 @@ func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.W
 
 		if cfg.Enabled {
 			// wire the binder
-			serviceBinder = httphandler.New(nil)
+			serviceBinder = httphandler.New(mtr)
 
 			// override the default healthcheck handler
 			healthCheckHandler := healthcheck.NewHandler(
@@ -92,9 +92,6 @@ func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.W
 		}
 
 		httpMonitoringServer.StartServer()
-
-		// example of custom metric
-		mtr.IncExampleCounter("START")
 
 		return nil
 	}

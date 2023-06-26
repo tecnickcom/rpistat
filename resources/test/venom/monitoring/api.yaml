@@ -1,7 +1,7 @@
 version: "2"
 name: rpistat monitoring API tests
 vars:
-  rpistat.url: 'http://rpistat:8072'
+  rpistat.url: 'http://rpistat:65501'
 
 testcases:
 
@@ -96,3 +96,30 @@ testcases:
     url: '{{.rpistat.url}}/ip'
     assertions:
     - result.statuscode ShouldEqual 200
+
+- name: stats
+  steps:
+    - type: http
+      ignore_verify_ssl optional: true
+      method: GET
+      url: '{{.rpistat.url}}/stats'
+      assertions:
+        - result.statuscode ShouldEqual 200
+        - result.body ShouldNotBeEmpty
+        - result.body ShouldContainSubstring '"datetime"'
+        - result.body ShouldContainSubstring '"timestamp"'
+        - result.body ShouldContainSubstring '"hostname"'
+        - result.body ShouldContainSubstring '"uptime"'
+        - result.body ShouldContainSubstring '"memory_total"'
+        - result.body ShouldContainSubstring '"memory_free"'
+        - result.body ShouldContainSubstring '"memory_used"'
+        - result.body ShouldContainSubstring '"memory_usage"'
+        - result.body ShouldContainSubstring '"load_1m"'
+        - result.body ShouldContainSubstring '"load_5m"'
+        - result.body ShouldContainSubstring '"load_15m"'
+        - result.body ShouldContainSubstring '"temperature_cpu"'
+        - result.body ShouldContainSubstring '"disk_total"'
+        - result.body ShouldContainSubstring '"disk_free"'
+        - result.body ShouldContainSubstring '"disk_used"'
+        - result.body ShouldContainSubstring '"disk_usage'
+        - result.body ShouldContainSubstring '"network"'

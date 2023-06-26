@@ -29,12 +29,9 @@ type cfgServer struct {
 
 type cfgServerMonitoring cfgServer
 
-type cfgServerPublic cfgServer
-
 // cfgServers contains the configuration for all exposed servers.
 type cfgServers struct {
 	Monitoring cfgServerMonitoring `mapstructure:"monitoring" validate:"required,hostname_port"`
-	Public     cfgServerPublic     `mapstructure:"public" validate:"required,hostname_port"`
 }
 
 type cfgClientIpify struct {
@@ -59,11 +56,8 @@ type appConfig struct {
 func (c *appConfig) SetDefaults(v config.Viper) {
 	v.SetDefault("enabled", true)
 
-	v.SetDefault("servers.monitoring.address", ":8072")
-	v.SetDefault("servers.monitoring.timeout", 60)
-
-	v.SetDefault("servers.public.address", ":65501")
-	v.SetDefault("servers.public.timeout", 60)
+	v.SetDefault("servers.monitoring.address", ":65501")
+	v.SetDefault("servers.monitoring.timeout", 15)
 
 	v.SetDefault("clients.ipify.address", "https://api.ipify.org")
 	v.SetDefault("clients.ipify.timeout", 1)

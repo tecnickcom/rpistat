@@ -147,41 +147,6 @@
           "description": "Configuration for the monitoring server",
           "examples": [
             {
-              "address": ":8072",
-              "timeout": 60
-            }
-          ],
-          "properties": {
-            "address": {
-              "default": "",
-              "description": "HTTP address (ip:port) or just (:port)",
-              "examples": [
-                ":8072"
-              ],
-              "title": "Address",
-              "type": "string"
-            },
-            "timeout": {
-              "description": "HTTP request timeout [seconds]",
-              "examples": [
-                60
-              ],
-              "title": "Timeout",
-              "type": "integer"
-            }
-          },
-          "required": [
-            "address",
-            "timeout"
-          ],
-          "title": "Monitoring HTTP server",
-          "type": "object"
-        },
-        "public": {
-          "additionalProperties": false,
-          "description": "Configuration for the public server",
-          "examples": [
-            {
               "address": ":65501",
               "timeout": 60
             }
@@ -209,13 +174,12 @@
             "address",
             "timeout"
           ],
-          "title": "Public HTTP server",
+          "title": "Monitoring HTTP server",
           "type": "object"
         }
       },
       "required": [
-        "monitoring",
-        "public"
+        "monitoring"
       ],
       "title": "Servers",
       "type": "object"

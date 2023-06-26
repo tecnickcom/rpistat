@@ -1,19 +1,22 @@
-<!-- Space: tecnickcom -->
+<!-- Space: <no value> -->
 <!-- Parent: Projects -->
 <!-- Title: rpistat -->
 <!-- Attachment: doc/images/logo.png -->
 
 # rpistat
 
-*Web-Service to collext Raspberry PI 4 system statistics*
+*Web-Service to collext Raspberry PI 4 system usage statistics*
+
+[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-87ceeb.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)
+*Please consider supporting this project by making a donation via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)*
 
 ![rpistat logo](doc/images/logo.png)
 
 * **category:**    Application
-* **copyright:**   2020-2023 tecnickcom
+* **copyright:**   2022-2023 Nicola Asuni - Tecnick.com LTD
 * **license:**     [LICENSE](https://github.com/tecnickcom/rpistat/blob/main/LICENSE)
 * **cvs:**         https://github.com/tecnickcom/rpistat
-* **team:**        [tecnickcom](<no value>) ([<no value>](https://tecnickcom.slack.com/channels/<no value>)) [escalation](<no value>)
+* **team:**        [<no value>](<no value>) ([<no value>](https://tecnickcom.slack.com/channels/<no value>)) [escalation](<no value>)
 
 [![check](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml)
 
@@ -31,7 +34,11 @@
 
 <a name="description"></a>
 ## Description
-Web-Service to collext Raspberry PI 4 system statistics
+Web-Service to collext Raspberry PI 4 system usage statistics.
+
+The statistics are exposed both via the ```/stats``` API endpoint.
+
+An example HomeAssistant sensor and template to scrape those metrics can be found in the ```resources/HomeAssistant/``` directory.
 
 
 ----------

@@ -86,7 +86,7 @@ func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.W
 			httpserver.WithShutdownSignalChan(sc),
 		}
 
-		httpMonitoringServer, err := httpserver.New(ctx, httpserver.NopBinder(), httpMonitoringOpts...)
+		httpMonitoringServer, err := httpserver.New(ctx, serviceBinder, httpMonitoringOpts...)
 		if err != nil {
 			return fmt.Errorf("error creating monitoring HTTP server: %w", err)
 		}
@@ -95,24 +95,6 @@ func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.W
 
 		// example of custom metric
 		mtr.IncExampleCounter("START")
-
-		// start public server
-		httpPublicOpts := []httpserver.Option{
-			httpserver.WithServerAddr(cfg.Servers.Public.Address),
-			httpserver.WithRequestTimeout(time.Duration(cfg.Servers.Public.Timeout) * time.Second),
-			httpserver.WithMiddlewareFn(middleware),
-			httpserver.WithTraceIDHeaderName(traceid.DefaultHeader),
-			httpserver.WithEnableDefaultRoutes(httpserver.PingRoute),
-			httpserver.WithShutdownWaitGroup(wg),
-			httpserver.WithShutdownSignalChan(sc),
-		}
-
-		httpPublicServer, err := httpserver.New(ctx, serviceBinder, httpPublicOpts...)
-		if err != nil {
-			return fmt.Errorf("error creating public HTTP server: %w", err)
-		}
-
-		httpPublicServer.StartServer()
 
 		return nil
 	}

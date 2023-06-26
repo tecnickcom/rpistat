@@ -157,7 +157,7 @@ GOFMT=$(shell which gofmt)
 GOTEST=GOPATH=$(GOPATH) $(shell which gotest)
 GODOC=GOPATH=$(GOPATH) $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
-GOLANGCILINTVERSION=v1.53.2
+GOLANGCILINTVERSION=v1.53.3
 
 # Current operating system and architecture as one string.
 GOOSARCH=$(shell go env GOOS GOARCH | tr -d \\n)
@@ -230,8 +230,7 @@ ifeq ($(DEPLOY_ENV), int)
 	#DOCKER_REGISTRY_PUSH=
 	#DOCKER_LOGIN_PULL=
 	#DOCKER_LOGIN_PUSH=
-	RPISTAT_URL=http://rpistat:65501
-	RPISTAT_MONITORING_URL=http://rpistat:8072
+	RPISTAT_MONITORING_URL=http://rpistat:65501
 	API_TEST_FILE=*.yaml
 endif
 
@@ -242,8 +241,7 @@ ifeq ($(DEPLOY_ENV), dev)
 	DOCKER_REGISTRY_PUSH=${DOCKER_REGISTRY_DEV}
 	#DOCKER_LOGIN_PULL=
 	#DOCKER_LOGIN_PUSH=
-	RPISTAT_URL=http://rpistat:65501
-	RPISTAT_MONITORING_URL=http://rpistat:8072
+	RPISTAT_MONITORING_URL=http://rpistat:65501
 	API_TEST_FILE=*.yaml
 endif
 
@@ -254,8 +252,7 @@ ifeq ($(DEPLOY_ENV), qa)
 	DOCKER_REGISTRY_PUSH=${DOCKER_REGISTRY_QA}
 	#DOCKER_LOGIN_PULL=
 	#DOCKER_LOGIN_PUSH=
-	RPISTAT_URL=http://rpistat:65501
-	RPISTAT_MONITORING_URL=http://rpistat:8072
+	RPISTAT_MONITORING_URL=http://rpistat:65501
 endif
 
 # Production environment
@@ -265,8 +262,7 @@ ifeq ($(DEPLOY_ENV), prod)
 	DOCKER_REGISTRY_PUSH=${DOCKER_REGISTRY_PROD}
 	#DOCKER_LOGIN_PULL=
 	#DOCKER_LOGIN_PUSH=
-	RPISTAT_URL=http://rpistat:65501
-	RPISTAT_MONITORING_URL=http://rpistat:8072
+	RPISTAT_MONITORING_URL=http://rpistat:65501
 	API_TEST_FILE=*.yaml
 endif
 
@@ -323,7 +319,6 @@ x:
 .PHONY: apitest
 apitest:
 	$(MAKE) venomtest API_TEST_DIR=monitoring API_TEST_URL=${RPISTAT_MONITORING_URL} API_TEST_FILE=api.yaml
-	$(MAKE) venomtest API_TEST_DIR=public API_TEST_URL=${RPISTAT_URL} API_TEST_FILE=${API_TEST_FILE}
 
 # Full build and test sequence
 # You may want to change this and remove the options you don't need
@@ -434,10 +429,10 @@ dockerdev:
 .PHONY: dockerdir
 dockerdir:
 ifneq ($(GOOSARCH),linuxamd64)
-	$(MAKE) build GOBUILDENV=$(LINUXGOBUILDENV) 
+	$(MAKE) build GOBUILDENV=$(LINUXGOBUILDENV)
 endif
 ifneq ($(GOBUILDENV),)
-	$(MAKE) build GOBUILDENV=$(LINUXGOBUILDENV) 
+	$(MAKE) build GOBUILDENV=$(LINUXGOBUILDENV)
 endif
 	rm -rf $(PATHDOCKERPKG)
 	$(MAKE) install DESTDIR=$(PATHDOCKERPKG)
@@ -590,7 +585,6 @@ modupdate:
 .PHONY: openapitest
 openapitest:
 	$(MAKE) schemathesistest API_TEST_URL=${RPISTAT_MONITORING_URL} OPENAPI_FILE=openapi_monitoring.yaml
-	$(MAKE) schemathesistest API_TEST_URL=${RPISTAT_URL} OPENAPI_FILE=openapi.yaml
 
 # Ping the deployed service to check if the correct deployed container is alive
 .PHONY: ping

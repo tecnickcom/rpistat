@@ -6,10 +6,10 @@ info:
     email: info@tecnick.com
   license:
     name: Internal use only. All rights reserved.
-    url: 'https://github.com/tecnickcom/rpistat/blob/main/LICENSE'
-  version: 2.0.0
+    url: https://github.com/tecnickcom/rpistat/blob/main/LICENSE
+  version: 3.0.0
 servers:
-  - url: 'https://rpistat:8072/'
+  - url: https://rpistat:65501/
 tags:
   - name: index
     description: Service index
@@ -21,6 +21,8 @@ tags:
     description: Returns Prometheus metrics
   - name: pprof
     description: Returns pprof data
+  - name: stats
+    description: Returns system usage statistics
 paths:
   /:
     get:
@@ -140,9 +142,21 @@ paths:
                   - type: object
                     properties:
                       data:
-                      data:
                         type: string
                         description: Error
+  /stats:
+    get:
+      tags:
+        - stats
+      summary: Returns system usage statistics
+      responses:
+        '200':
+          description: System usage statistics
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/stats'
 components:
   schemas:
     response:
@@ -172,3 +186,75 @@ components:
         message:
           type: string
           description: response message
+    stats:
+      type: object
+      properties:
+        datetime:
+          type: string
+          description: >-
+            DateTime is the human-readable date and time when the response is
+            sent.
+        timestamp:
+          type: integer
+          description: >-
+            Timestamp is the machine-readable UTC timestamp in nanoseconds since
+            EPOCH.
+        hostname:
+          type: string
+          description: Hostname name of the host.
+        uptime:
+          type: integer
+          description: Uptime time since last system boot.
+        memory_total:
+          type: integer
+          description: Total Memory in bytes.
+        memory_free:
+          type: integer
+          description: Total free memory in bytes.
+        memory_used:
+          type: integer
+          description: Total memory used in bytes.
+        memory_usage:
+          type: number
+          description: Total memory used in percentage
+        load_1m:
+          type: number
+          description: Load is the 1 minute load average.
+        load_5m:
+          type: number
+          description: Load is the 5 minute load average.
+        load_15m:
+          type: number
+          description: Load is the 15 minute load average.
+        temperature_cpu:
+          type: number
+          description: CPU Temperature in Celsius Degrees.
+        disk_total:
+          type: integer
+          description: Total Disk size in bytes.
+        disk_free:
+          type: integer
+          description: Total free disk space in bytes.
+        disk_used:
+          type: integer
+          description: Total disk used in bytes.
+        disk_usage:
+          type: number
+          description: Total disk used in percentage
+        network:
+          type: array
+          items:
+            type: object
+            description: >-
+              Network contains an array of network statistics, one entry for
+              each physical interface.
+            properties:
+              nic:
+                type: string
+                description: NIC name.
+              rx:
+                type: integer
+                description: Received bytes.
+              tx:
+                type: integer
+                description: Transmitted bytes.

@@ -61,9 +61,6 @@ The configuration format is a single JSON structure with the following fields:
     * **monitoring**: Monitoring HTTP server
         * **address**: HTTP address (ip:port) or just (:port)
         * **timeout**: HTTP request timeout [seconds]
-    * **public**: *Public HTTP server*
-        * **address**: HTTP address (ip:port) or just (:port)
-        * **timeout**: HTTP request timeout [seconds]
 
 * **clients**: Configuration for external service clients
     * **ipify**:  ipify service client

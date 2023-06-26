@@ -33,34 +33,11 @@ func Test_bind(t *testing.T) {
 			fcfg: func(cfg appConfig) appConfig {
 				cfg.Enabled = false
 				cfg.Servers.Monitoring.Address = ":30044"
-				cfg.Servers.Public.Address = ":30045"
 				return cfg
 			},
 			preBindAddr:    ":30044",
 			wantErr:        true,
 			wantTimeoutErr: false,
-		},
-		{
-			name: "fails with public server port already bound",
-			fcfg: func(cfg appConfig) appConfig {
-				cfg.Enabled = false
-				cfg.Servers.Monitoring.Address = ":30046"
-				cfg.Servers.Public.Address = ":30047"
-				return cfg
-			},
-			preBindAddr:    ":30047",
-			wantErr:        true,
-			wantTimeoutErr: false,
-		},
-		{
-			name: "fails with same server ports",
-			fcfg: func(cfg appConfig) appConfig {
-				cfg.Enabled = false
-				cfg.Servers.Monitoring.Address = ":30043"
-				cfg.Servers.Public.Address = ":30043"
-				return cfg
-			},
-			wantErr: true,
 		},
 		{
 			name: "fails with bad ipify client address",
@@ -76,7 +53,6 @@ func Test_bind(t *testing.T) {
 			fcfg: func(cfg appConfig) appConfig {
 				cfg.Enabled = false
 				cfg.Servers.Monitoring.Address = ":30041"
-				cfg.Servers.Public.Address = ":30042"
 				return cfg
 			},
 			wantErr: false,

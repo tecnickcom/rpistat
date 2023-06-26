@@ -14,10 +14,6 @@
   },
   "servers": {
     "monitoring": {
-      "address": ":8072",
-      "timeout": 5
-    },
-    "public": {
       "address": ":65501",
       "timeout": 5
     }

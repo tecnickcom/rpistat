@@ -4,15 +4,15 @@ project:
   name: rpistat
   title: rpistat
   category: Application
-  copyright_start_year: "2020"
-  copyright_owner: tecnickcom
+  copyright_start_year: "2022"
+  copyright_owner: Nicola Asuni - Tecnick.com LTD
   license_url: https://github.com/tecnickcom/rpistat/blob/main/LICENSE
   cvs: https://github.com/tecnickcom/rpistat
-  tagline: Web-Service to collext Raspberry PI 4 system statistics
+  tagline: Web-Service to collext Raspberry PI 4 system usage statistics
   logo: doc/images/logo.png
 team:
-  name: tecnickcom
-  title: tecnickcom
+  name:
+  title:
   info:
   slack:
   escalation:

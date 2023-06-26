@@ -16,7 +16,7 @@ func Test_appConfig_SetDefaults(t *testing.T) {
 	c.SetDefaults(v)
 
 	require.True(t, v.GetBool("enabled"))
-	require.Equal(t, 7, len(v.AllKeys()))
+	require.Equal(t, 5, len(v.AllKeys()))
 }
 
 func getValidTestConfig() appConfig {
@@ -41,10 +41,6 @@ func getValidTestConfig() appConfig {
 			Monitoring: cfgServerMonitoring{
 				Address: ":1233",
 				Timeout: 11,
-			},
-			Public: cfgServerPublic{
-				Address: ":1231",
-				Timeout: 12,
 			},
 		},
 	}
@@ -124,26 +120,6 @@ func Test_appConfig_Validate(t *testing.T) {
 		{
 			name:    "empty servers.monitoring.timeout",
 			fcfg:    func(cfg appConfig) appConfig { cfg.Servers.Monitoring.Timeout = 0; return cfg },
-			wantErr: true,
-		},
-		{
-			name:    "empty servers.public",
-			fcfg:    func(cfg appConfig) appConfig { cfg.Servers.Public = cfgServerPublic{}; return cfg },
-			wantErr: true,
-		},
-		{
-			name:    "empty servers.public.address",
-			fcfg:    func(cfg appConfig) appConfig { cfg.Servers.Public.Address = ""; return cfg },
-			wantErr: true,
-		},
-		{
-			name:    "invalid servers.public.address",
-			fcfg:    func(cfg appConfig) appConfig { cfg.Servers.Public.Address = "-WRONG_PUBLIC_ADDRESS-"; return cfg },
-			wantErr: true,
-		},
-		{
-			name:    "empty servers.public.timeout",
-			fcfg:    func(cfg appConfig) appConfig { cfg.Servers.Public.Timeout = 0; return cfg },
 			wantErr: true,
 		},
 		{

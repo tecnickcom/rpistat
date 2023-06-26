@@ -20,10 +20,6 @@
     "monitoring": {
       "address": ":invalid",
       "timeout": 5
-    },
-    "public": {
-      "address": ":65501",
-      "timeout": 5
     }
   },
   "shutdown_timeout": 30

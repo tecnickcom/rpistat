@@ -1,5 +1,5 @@
 [Unit]
-Description=Web API to collect sytem statistics
+Description=Web service to collect system usage statistics
 
 Wants=network.target
 After=syslog.target network-online.target

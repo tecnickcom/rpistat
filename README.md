@@ -41,7 +41,8 @@ The statistics are exposed both via the ```/stats``` Web API endpoint and [Prome
 
 An [HomeAssistant](https://www.home-assistant.io/) sensor and template to collect those metrics can be found in the ```resources/HomeAssistant/``` directory.
 
-Example:
+
+### REST API Example:
 
 ```
 curl 192.168.1.2:65501/stats
@@ -84,6 +85,10 @@ curl 192.168.1.2:65501/stats
 
 }
 ```
+
+### HomeAssistant Screenshot
+
+![HomeAssistant screenshot](doc/images/homeassistant.png)
 
 
 ----------

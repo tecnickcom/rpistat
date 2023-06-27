@@ -5,7 +5,7 @@
 
 # rpistat
 
-*Web-Service to collext Raspberry PI 4 system usage statistics*
+*Web-Service to collect system usage statistics.*
 
 [![Donate via PayPal](https://img.shields.io/badge/donate-paypal-87ceeb.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)
 *Please consider supporting this project by making a donation via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)*
@@ -16,7 +16,6 @@
 * **copyright:**   2022-2023 Nicola Asuni - Tecnick.com LTD
 * **license:**     [LICENSE](https://github.com/tecnickcom/rpistat/blob/main/LICENSE)
 * **cvs:**         https://github.com/tecnickcom/rpistat
-* **team:**        [<no value>](<no value>) ([<no value>](https://tecnickcom.slack.com/channels/<no value>)) [escalation](<no value>)
 
 [![check](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml)
 
@@ -34,13 +33,57 @@
 
 <a name="description"></a>
 ## Description
-Web-Service to collext Raspberry PI 4 system usage statistics.
+Web-Service to collect system usage statistics.
 
-The statistics are exposed both via the ```/stats``` API endpoint.
+This project was started to collect system usage statistics from a remote [Raspberry PI 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) but it can be compiled and used with other systems too.
 
-An example HomeAssistant sensor and template to scrape those metrics can be found in the ```resources/HomeAssistant/``` directory.
+The statistics are exposed both via the ```/stats``` Web API endpoint and [Prometheus](https://prometheus.io/) metrics at ```/metrics```.
 
-Other system statistics are available via Prometheus at ```/metrics```.
+An [HomeAssistant](https://www.home-assistant.io/) sensor and template to collect those metrics can be found in the ```resources/HomeAssistant/``` directory.
+
+Example:
+
+```
+curl 192.168.1.2:65501/stats
+
+{
+
+      "datetime": "2023-06-27T07:03:54Z",
+      "timestamp": 1687849434569669934,
+      "hostname": "rpi4",
+      "uptime": 680189000000000,
+      "memory_total": 1005973504,
+      "memory_free": 587198464,
+      "memory_used": 418775040,
+      "memory_usage": 0.41628833993623754,
+      "load_1m": 0,
+      "load_5m": 0,
+      "load_15m": 0,
+      "temperature_cpu": 44.303,
+      "disk_total": 31109140480,
+      "disk_free": 27586793472,
+      "disk_used": 3522347008,
+      "disk_usage": 0.11322546858099501,
+      "network": [
+            {
+                  "nic": "eth0",
+                  "rx": 163621268,
+                  "tx": 113155073
+            },
+            {
+                  "nic": "wlan0",
+                  "rx": 8225055,
+                  "tx": 1327982
+            },
+            {
+                  "nic": "eth1",
+                  "rx": 24906794,
+                  "tx": 18615044
+            }
+      ]
+
+}
+```
 
 
 ----------
@@ -143,6 +186,11 @@ make build
 
 Before committing the code, please check if it passes all tests using
 ```bash
+make x
+```
+
+that is an alias for:
+```bash
 DEVMODE=LOCAL make format clean mod deps generate qa build docker dockertest
 ```
 
@@ -150,7 +198,7 @@ DEVMODE=LOCAL make format clean mod deps generate qa build docker dockertest
 <a name="gendoc"></a>
 ## Documentation
 
-The `README.md` and `doc/RUNBOOK.md` documentation files are generated using the source templates in `doc/src` via `make gendoc` command.
+The `README.md` documentation file is generated using the source templates in `doc/src` via `make gendoc` command.
 
 To update links and common information edit the file `doc/src/config.yaml` in YAML format.
 The schema of the configuration file is defined by the JSON schema: `doc/src/config.schema.json`.
@@ -307,9 +355,17 @@ docker rmi $(docker images -q)
 
 <a name="deployment"></a>
 ## Deployment
-### Deployment in Production
+After building the executable binary with `make build`:
 
-Add here information on how to deploy in production.
+* Copy the `target/usr/bin/rpistat` file into `/usr/bin/rpistat` in the target system.
+* Set the file is executable with: `sudo chmod +x /usr/bin/rpistat`.
+* Copy and edit the configuration file `resources/etc/rpistat/config.json` into `/etc/rpistat/config.json` in the target system.
+* Copy the service file `resources/etc/systemd/system/rpistat.service` into `/etc/systemd/system/rpistat.service` in the target system and enable it:
+```
+sudo systemctl daemon-reload
+sudo systemctl enable rpistat.service
+sudo systemctl start rpistat.service
+```
 
 
 ----------

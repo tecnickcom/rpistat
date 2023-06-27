@@ -1,4 +1,4 @@
-// Package main is a web-Service to collext Raspberry PI 4 system statistics.
+// Package main is a web-Service to collect system usage statistics.
 package main
 
 import (

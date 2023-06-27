@@ -13,10 +13,10 @@ const (
 	appEnvPrefix = "RPISTAT"
 
 	// appShortDesc is the short description of the application.
-	appShortDesc = "Web-Service to collext Raspberry PI 4 system statistics"
+	appShortDesc = "Web-Service to collect system usage statistics"
 
 	// appLongDesc is the long description of the application.
-	appLongDesc = "Web-Service to collext Raspberry PI 4 system statistics"
+	appLongDesc = "Web-Service to collect system usage statistics"
 
 	// fieldTagName is the name of the tag containing the original JSON field name.
 	fieldTagName = "mapstructure"

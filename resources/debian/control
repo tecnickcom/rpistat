@@ -11,5 +11,5 @@ Package: ~#PKGNAME#~
 Provides: rpistat
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Web-Service to collext Raspberry PI 4 system statistics
- rpistat : Web-Service to collext Raspberry PI 4 system statistics
+Description: Web-Service to collect system usage statistics
+ rpistat : Web-Service to collect system usage statistics

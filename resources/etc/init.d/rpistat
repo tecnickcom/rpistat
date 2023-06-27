@@ -11,7 +11,7 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start rpistat
-# Description:       Web-Service to collext Raspberry PI 4 system statistics
+# Description:       Web-Service to collect system usage statistics
 ### END INIT INFO
 
 CMD="/usr/bin/rpistat"

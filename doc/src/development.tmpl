@@ -78,6 +78,11 @@ make build
 
 Before committing the code, please check if it passes all tests using
 ```bash
+make x
+```
+
+that is an alias for:
+```bash
 DEVMODE=LOCAL make format clean mod deps generate qa build docker dockertest
 ```
 
@@ -85,7 +90,7 @@ DEVMODE=LOCAL make format clean mod deps generate qa build docker dockertest
 <a name="gendoc"></a>
 ## Documentation
 
-The `README.md` and `doc/RUNBOOK.md` documentation files are generated using the source templates in `doc/src` via `make gendoc` command.
+The `README.md` documentation file is generated using the source templates in `doc/src` via `make gendoc` command.
 
 To update links and common information edit the file `doc/src/config.yaml` in YAML format.
 The schema of the configuration file is defined by the JSON schema: `doc/src/config.schema.json`.

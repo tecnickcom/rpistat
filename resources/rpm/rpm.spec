@@ -8,7 +8,7 @@
 Name:      %{_package}
 Version:   %{_version}
 Release:   %{_release}%{?dist}
-Summary:   Web-Service to collext Raspberry PI 4 system statistics
+Summary:   Web-Service to collect system usage statistics
 
 Group:     Applications/Services
 License:   %{_docpath}/LICENSE
@@ -19,7 +19,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-%(%{__id_u} -n)
 Provides:  %{gh_project} = %{version}
 
 %description
-Web-Service to collext Raspberry PI 4 system statistics
+Web-Service to collect system usage statistics
 
 %build
 #(cd %{_current_directory} && make build)

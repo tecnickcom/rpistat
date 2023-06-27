@@ -1,3 +1,11 @@
-### Deployment in Production
+After building the executable binary with `make build`:
 
-Add here information on how to deploy in production.
+* Copy the `target/usr/bin/rpistat` file into `/usr/bin/rpistat` in the target system.
+* Set the file is executable with: `sudo chmod +x /usr/bin/rpistat`.
+* Copy and edit the configuration file `resources/etc/rpistat/config.json` into `/etc/rpistat/config.json` in the target system.
+* Copy the service file `resources/etc/systemd/system/rpistat.service` into `/etc/systemd/system/rpistat.service` in the target system and enable it:
+```
+sudo systemctl daemon-reload
+sudo systemctl enable rpistat.service
+sudo systemctl start rpistat.service
+```

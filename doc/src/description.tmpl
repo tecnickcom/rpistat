@@ -1,7 +1,51 @@
-Web-Service to collext Raspberry PI 4 system usage statistics.
+Web-Service to collect system usage statistics.
 
-The statistics are exposed both via the ```/stats``` API endpoint.
+This project was started to collect system usage statistics from a remote [Raspberry PI 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) but it can be compiled and used with other systems too.
 
-An example HomeAssistant sensor and template to scrape those metrics can be found in the ```resources/HomeAssistant/``` directory.
+The statistics are exposed both via the ```/stats``` Web API endpoint and [Prometheus](https://prometheus.io/) metrics at ```/metrics```.
 
-Other system statistics are available via Prometheus at ```/metrics```.
+An [HomeAssistant](https://www.home-assistant.io/) sensor and template to collect those metrics can be found in the ```resources/HomeAssistant/``` directory.
+
+Example:
+
+```
+curl 192.168.1.2:65501/stats
+
+{
+
+      "datetime": "2023-06-27T07:03:54Z",
+      "timestamp": 1687849434569669934,
+      "hostname": "rpi4",
+      "uptime": 680189000000000,
+      "memory_total": 1005973504,
+      "memory_free": 587198464,
+      "memory_used": 418775040,
+      "memory_usage": 0.41628833993623754,
+      "load_1m": 0,
+      "load_5m": 0,
+      "load_15m": 0,
+      "temperature_cpu": 44.303,
+      "disk_total": 31109140480,
+      "disk_free": 27586793472,
+      "disk_used": 3522347008,
+      "disk_usage": 0.11322546858099501,
+      "network": [
+            {
+                  "nic": "eth0",
+                  "rx": 163621268,
+                  "tx": 113155073
+            },
+            {
+                  "nic": "wlan0",
+                  "rx": 8225055,
+                  "tx": 1327982
+            },
+            {
+                  "nic": "eth1",
+                  "rx": 24906794,
+                  "tx": 18615044
+            }
+      ]
+
+}
+```

@@ -1,8 +1,8 @@
 {
   "clients": {
     "ipify": {
-      "address": "",
-      "timeout": 1
+      "address": "https://api.ipify.org",
+      "timeout": 15
     }
   },
   "enabled": true,
@@ -18,9 +18,9 @@
   "remoteConfigSecretKeyring": "",
   "servers": {
     "monitoring": {
-      "address": "",
+      "address": ":65501",
       "timeout": 5
-    }
+    } 
   },
-  "shutdown_timeout": 60
+  "shutdown_timeout": 30
 }

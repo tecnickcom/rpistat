@@ -16,7 +16,7 @@ services:
       - ./target/report/:/workspace/target/report/
 
   rpistat:
-    image: tecnickcom/rpistat:latest
+    image: tecnickcom/rpistat
     container_name: rpistat
     restart: always
     env_file:

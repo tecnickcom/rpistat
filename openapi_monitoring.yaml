@@ -10,6 +10,8 @@ info:
   version: 3.0.0
 servers:
   - url: https://rpistat:65501/
+security:
+  - {}
 tags:
   - name: index
     description: Service index

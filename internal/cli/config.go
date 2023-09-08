@@ -31,7 +31,7 @@ type cfgServerMonitoring cfgServer
 
 // cfgServers contains the configuration for all exposed servers.
 type cfgServers struct {
-	Monitoring cfgServerMonitoring `mapstructure:"monitoring" validate:"required,hostname_port"`
+	Monitoring cfgServerMonitoring `mapstructure:"monitoring" validate:"required"`
 }
 
 type cfgClientIpify struct {

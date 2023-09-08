@@ -175,7 +175,6 @@ func (t *Stats) disk() {
 	t.metric.SetDiskFree(t.DiskFree)
 }
 
-//nolint:gocognit
 func (t *Stats) network() {
 	fd, err := syscall.Openat(0, fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {

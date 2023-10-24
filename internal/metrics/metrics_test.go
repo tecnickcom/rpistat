@@ -33,7 +33,7 @@ func TestSetUptime(t *testing.T) {
 
 	m.SetUptime(v)
 	i := testutil.ToFloat64(m.collectorUptime)
-	require.Equal(t, float64(v), i)
+	require.InDelta(t, float64(v), i, 0.001)
 }
 
 func TestSetMemoryTotal(t *testing.T) {
@@ -45,7 +45,7 @@ func TestSetMemoryTotal(t *testing.T) {
 
 	m.SetMemoryTotal(v)
 	i := testutil.ToFloat64(m.collectorMemoryTotal)
-	require.Equal(t, float64(v), i)
+	require.InDelta(t, float64(v), i, 0.001)
 }
 
 func TestSetMemoryFree(t *testing.T) {
@@ -57,7 +57,7 @@ func TestSetMemoryFree(t *testing.T) {
 
 	m.SetMemoryFree(v)
 	i := testutil.ToFloat64(m.collectorMemoryFree)
-	require.Equal(t, float64(v), i)
+	require.InDelta(t, float64(v), i, 0.001)
 }
 
 func TestSetLoad1(t *testing.T) {
@@ -69,7 +69,7 @@ func TestSetLoad1(t *testing.T) {
 
 	m.SetLoad1(v)
 	i := testutil.ToFloat64(m.collectorLoad1)
-	require.Equal(t, v, i)
+	require.InDelta(t, v, i, 0.001)
 }
 
 func TestSetLoad5(t *testing.T) {
@@ -81,7 +81,7 @@ func TestSetLoad5(t *testing.T) {
 
 	m.SetLoad5(v)
 	i := testutil.ToFloat64(m.collectorLoad5)
-	require.Equal(t, v, i)
+	require.InDelta(t, v, i, 0.001)
 }
 
 func TestSetLoad15(t *testing.T) {
@@ -93,7 +93,7 @@ func TestSetLoad15(t *testing.T) {
 
 	m.SetLoad15(v)
 	i := testutil.ToFloat64(m.collectorLoad15)
-	require.Equal(t, v, i)
+	require.InDelta(t, v, i, 0.001)
 }
 
 func TestSetTempCPU(t *testing.T) {
@@ -105,7 +105,7 @@ func TestSetTempCPU(t *testing.T) {
 
 	m.SetTempCPU(v)
 	i := testutil.ToFloat64(m.collectorTempCPU)
-	require.Equal(t, v, i)
+	require.InDelta(t, v, i, 0.001)
 }
 
 func TestSetDiskTotal(t *testing.T) {
@@ -117,7 +117,7 @@ func TestSetDiskTotal(t *testing.T) {
 
 	m.SetDiskTotal(v)
 	i := testutil.ToFloat64(m.collectorDiskTotal)
-	require.Equal(t, float64(v), i)
+	require.InDelta(t, float64(v), i, 0.001)
 }
 
 func TestSetDiskFree(t *testing.T) {
@@ -129,7 +129,7 @@ func TestSetDiskFree(t *testing.T) {
 
 	m.SetDiskFree(v)
 	i := testutil.ToFloat64(m.collectorDiskFree)
-	require.Equal(t, float64(v), i)
+	require.InDelta(t, float64(v), i, 0.001)
 }
 
 func TestSetNetwork(t *testing.T) {
@@ -143,8 +143,8 @@ func TestSetNetwork(t *testing.T) {
 	m.SetNetwork("test", rx, tx)
 
 	rc := testutil.ToFloat64(m.collectorNetworkRx)
-	require.Equal(t, float64(rx), rc)
+	require.InDelta(t, float64(rx), rc, 0.001)
 
 	tc := testutil.ToFloat64(m.collectorNetworkTx)
-	require.Equal(t, float64(tx), tc)
+	require.InDelta(t, float64(tx), tc, 0.001)
 }

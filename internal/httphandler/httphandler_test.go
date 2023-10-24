@@ -24,7 +24,7 @@ func TestHTTPHandler_BindHTTP(t *testing.T) {
 	mtr := metrics.New()
 	h := &HTTPHandler{mtr}
 	got := h.BindHTTP(testutil.Context())
-	require.Equal(t, 1, len(got))
+	require.Len(t, got, 1)
 }
 
 func TestHTTPHandler_handleStats(t *testing.T) {

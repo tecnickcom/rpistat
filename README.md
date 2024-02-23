@@ -359,14 +359,3 @@ sudo systemctl start rpistat.service
 ----------
 
 
-
-
-
-
-
-
-
-
-
-
-

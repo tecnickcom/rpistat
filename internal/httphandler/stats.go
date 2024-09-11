@@ -166,8 +166,8 @@ func (t *Stats) disk() {
 		return
 	}
 
-	t.DiskTotal = f.Blocks * uint64(f.Bsize)
-	t.DiskFree = f.Bfree * uint64(f.Bsize)
+	t.DiskTotal = f.Blocks * uint64(f.Bsize) //nolint:gosec
+	t.DiskFree = f.Bfree * uint64(f.Bsize)   //nolint:gosec
 	t.DiskUsed = t.DiskTotal - t.DiskFree
 	t.DiskUsage = (float64(t.DiskUsed) / float64(t.DiskTotal))
 

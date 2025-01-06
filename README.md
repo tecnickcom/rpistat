@@ -13,7 +13,7 @@
 ![rpistat logo](doc/images/logo.png)
 
 * **category:**    Application
-* **copyright:**   2022-2024 Nicola Asuni - Tecnick.com LTD
+* **copyright:**   2022-2025 Nicola Asuni - Tecnick.com LTD
 * **license:**     [LICENSE](https://github.com/tecnickcom/rpistat/blob/main/LICENSE)
 * **cvs:**         https://github.com/tecnickcom/rpistat
 

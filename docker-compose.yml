@@ -1,5 +1,3 @@
-version: '3.3'
-
 services:
   rpistat_integration:
     container_name: rpistat_integration

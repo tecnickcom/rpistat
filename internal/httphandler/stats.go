@@ -114,7 +114,9 @@ func (t *Stats) hostname() {
 
 func (t *Stats) sysinfo() {
 	var u unix.Sysinfo_t
-	if err := unix.Sysinfo(&u); err != nil {
+
+	err := unix.Sysinfo(&u)
+	if err != nil {
 		return
 	}
 

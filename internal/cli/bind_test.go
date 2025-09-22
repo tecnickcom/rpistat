@@ -32,6 +32,7 @@ func Test_bind(t *testing.T) {
 			fcfg: func(cfg appConfig) appConfig {
 				cfg.Enabled = false
 				cfg.Servers.Monitoring.Address = ":30044"
+
 				return cfg
 			},
 			preBindAddr:    ":30044",
@@ -52,6 +53,7 @@ func Test_bind(t *testing.T) {
 			fcfg: func(cfg appConfig) appConfig {
 				cfg.Enabled = false
 				cfg.Servers.Monitoring.Address = ":30041"
+
 				return cfg
 			},
 			wantErr: false,

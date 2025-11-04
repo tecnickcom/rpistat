@@ -5,8 +5,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Vonage/gosrvlib/pkg/httpserver"
-	"github.com/Vonage/gosrvlib/pkg/httputil"
+	"github.com/tecnickcom/gogen/pkg/httpserver"
+	"github.com/tecnickcom/gogen/pkg/httputil"
 	"github.com/tecnickcom/rpistat/internal/metrics"
 )
 

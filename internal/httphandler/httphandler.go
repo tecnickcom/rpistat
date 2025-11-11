@@ -3,6 +3,7 @@ package httphandler
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/tecnickcom/gogen/pkg/httpserver"
@@ -12,13 +13,15 @@ import (
 
 // HTTPHandler is the struct containing all the http handlers.
 type HTTPHandler struct {
-	metric metrics.Metrics
+	httpres *httputil.HTTPResp
+	metric  metrics.Metrics
 }
 
 // New creates a new instance of the HTTP handler.
-func New(m metrics.Metrics) *HTTPHandler {
+func New(l *slog.Logger, m metrics.Metrics) *HTTPHandler {
 	return &HTTPHandler{
-		metric: m,
+		httpres: httputil.NewHTTPResp(l),
+		metric:  m,
 	}
 }
 
@@ -35,5 +38,5 @@ func (h *HTTPHandler) BindHTTP(_ context.Context) []httpserver.Route {
 }
 
 func (h *HTTPHandler) handleStats(w http.ResponseWriter, r *http.Request) {
-	httputil.SendJSON(r.Context(), w, http.StatusOK, newStats(h.metric))
+	h.httpres.SendJSON(r.Context(), w, http.StatusOK, newStats(h.metric))
 }

@@ -7,14 +7,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tecnickcom/gogen/pkg/testutil"
 	"github.com/tecnickcom/rpistat/internal/metrics"
 )
 
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	hh := New(nil)
+	hh := New(nil, nil)
 	require.NotNil(t, hh)
 }
 
@@ -22,8 +21,8 @@ func TestHTTPHandler_BindHTTP(t *testing.T) {
 	t.Parallel()
 
 	mtr := metrics.New()
-	h := &HTTPHandler{mtr}
-	got := h.BindHTTP(testutil.Context())
+	h := &HTTPHandler{nil, mtr}
+	got := h.BindHTTP(t.Context())
 	require.Len(t, got, 1)
 }
 
@@ -31,11 +30,14 @@ func TestHTTPHandler_handleStats(t *testing.T) {
 	t.Parallel()
 
 	rr := httptest.NewRecorder()
-	req, _ := http.NewRequestWithContext(testutil.Context(), http.MethodGet, "/", nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 
 	mtr := metrics.New()
-	h := &HTTPHandler{mtr}
-	h.handleStats(rr, req)
+
+	hh := New(nil, mtr)
+	require.NotNil(t, hh)
+
+	hh.handleStats(rr, req)
 
 	resp := rr.Result()
 	require.NotNil(t, resp)

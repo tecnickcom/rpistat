@@ -140,7 +140,7 @@ func (t *Stats) sysinfo() {
 
 func (t *Stats) cpuTemp() {
 	fd, err := syscall.Openat(0, fileCPUTemp, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
-	if err != nil {
+	if err != nil || fd < 0 {
 		return
 	}
 
@@ -179,7 +179,7 @@ func (t *Stats) disk() {
 
 func (t *Stats) network() {
 	fd, err := syscall.Openat(0, fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
-	if err != nil {
+	if err != nil || fd < 0 {
 		return
 	}
 

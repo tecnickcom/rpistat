@@ -1,0 +1,20 @@
+[Unit]
+Description=rpistat service
+Documentation=https://github.com/tecnickcom/rpistat
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rpistat
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/rpistat.log
+StandardError=append:/var/log/rpistat.log
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

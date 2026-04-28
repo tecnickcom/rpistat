@@ -61,11 +61,11 @@ SSLCONFIGPATH=etc/ssl/
 # Search paths for system root CA certificates to include
 CACERTPATH=/etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/ca-bundle.pem /etc/pki/tls/cacert.pem /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/ssl/cert.pem
 
-# Path for init script
-INITPATH=etc/init.d/
+# Path for systemd unit file
+INITPATH=usr/lib/systemd/system/
 
-# Path for systemd service file
-SYSTEMDPATH=etc/systemd/system/
+# Optional legacy systemd service path
+SYSTEMDPATH=
 
 # Path path for documentation
 DOCPATH=usr/share/doc/$(PKGNAME)/
@@ -336,7 +336,9 @@ dbuild: dockerdev
 .PHONY: deb
 deb:
 	rm -rf $(PATHDEBPKG)
+	$(MAKE) build GOBUILDENV=
 	$(MAKE) install DESTDIR=$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)
+	rm -f $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/etc/passwd
 	rm -f $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/$(DOCPATH)LICENSE
 	tar -zcvf $(PATHDEBPKG)/$(PKGNAME)_$(VERSION).orig.tar.gz -C $(PATHDEBPKG)/ $(PKGNAME)-$(VERSION)
 	cp -rf ./resources/debian $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian
@@ -362,11 +364,11 @@ ifneq ($(strip $(MANPATH)),)
 	echo $(MANPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
 	echo "$(MANPATH)* $(MANPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
 endif
-	echo "statically-linked-binary usr/bin/$(PROJECT)" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
+	echo "statically-linked-binary [$(BINPATH)$(PROJECT)]" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
 	echo "new-package-should-close-itp-bug" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	echo "hardening-no-relro $(BINPATH)$(PROJECT)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	echo "embedded-library $(BINPATH)$(PROJECT): libyaml" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	cd $(PATHDEBPKG)/$(PKGNAME)-$(VERSION) && debuild -us -uc
+	echo "hardening-no-relro [$(BINPATH)$(PROJECT)]" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
+	echo "embedded-library [$(BINPATH)$(PROJECT)]: libyaml" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
+	cd $(PATHDEBPKG)/$(PKGNAME)-$(VERSION) && debuild -us -uc -d
 
 ## Get the test dependencies
 .PHONY: deps
@@ -506,7 +508,7 @@ ifneq ($(strip $(INITPATH)),)
 	mkdir -p $(PATHINSTINIT)
 	cp -rf ./resources/${INITPATH}* $(PATHINSTINIT)
 	find $(PATHINSTINIT) -type d -exec chmod 755 {} \;
-	find $(PATHINSTINIT) -type f -exec chmod 755 {} \;
+	find $(PATHINSTINIT) -type f -exec chmod 644 {} \;
 endif
 ifneq ($(strip $(SYSTEMDPATH)),)
 	mkdir -p $(PATHINSTSYSTEMD)
@@ -582,8 +584,12 @@ rping:
 .PHONY: rpm
 rpm:
 	rm -rf $(PATHRPMPKG)
+	mkdir -p $(PATHRPMPKG)/.rpmdb
+	rpm --initdb --dbpath $(PATHRPMPKG)/.rpmdb
+	$(MAKE) build
 	rpmbuild \
 	--define "_topdir $(PATHRPMPKG)" \
+	--define "_dbpath $(PATHRPMPKG)/.rpmdb" \
 	--define "_vendor $(VENDOR)" \
 	--define "_owner $(OWNER)" \
 	--define "_project $(PROJECT)" \

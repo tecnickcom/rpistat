@@ -7,9 +7,6 @@
 
 *Web-Service to collect system usage statistics.*
 
-[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-87ceeb.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)
-*Please consider supporting this project by making a donation via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&currency_code=GBP&business=paypal@tecnick.com&item_name=donation%20for%20rpistat%20project)*
-
 ![rpistat logo](doc/images/logo.png)
 
 * **category:**    Application
@@ -19,6 +16,9 @@
 
 [![check](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/rpistat/actions/workflows/check.yaml)
 
+[![Sponsor on GitHub](https://img.shields.io/badge/sponsor-github-EA4AAA.svg?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/tecnickcom)
+
+If this project is useful to you, please consider [supporting development via GitHub Sponsors](https://github.com/sponsors/tecnickcom).
 ----------
 
 ## TOC

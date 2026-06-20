@@ -71,7 +71,7 @@ func New() *Client {
 		collectorUptime: prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Name: nameUptime,
-				Help: "Time elapsed since last system boot.",
+				Help: "Time elapsed since last system boot, in nanoseconds.",
 			},
 		),
 		collectorMemoryTotal: prometheus.NewGauge(

@@ -44,7 +44,7 @@ type Stats struct {
 	// Hostname name of the host.
 	Hostname string `json:"hostname"`
 
-	// Uptime time elapsed since last system boot.
+	// Uptime is the time elapsed since last system boot, in nanoseconds.
 	Uptime time.Duration `json:"uptime"`
 
 	// MemoryTotal is the total available memory in bytes.
@@ -56,7 +56,7 @@ type Stats struct {
 	// MemoryUsed is the total memory used in bytes.
 	MemoryUsed uint64 `json:"memory_used"`
 
-	// MemoryUsage is the total memory used in percentage
+	// MemoryUsage is the used memory as a fraction in the range 0..1.
 	MemoryUsage float64 `json:"memory_usage"`
 
 	// Load1 is the 1 minute load average.
@@ -80,7 +80,7 @@ type Stats struct {
 	// DiskUsed is the total disk used in bytes.
 	DiskUsed uint64 `json:"disk_used"`
 
-	// DiskUsage is the total disk used in percentage
+	// DiskUsage is the used disk space as a fraction in the range 0..1.
 	DiskUsage float64 `json:"disk_usage"`
 
 	// Network contains an array of network statistics, one entry for each physical interface.

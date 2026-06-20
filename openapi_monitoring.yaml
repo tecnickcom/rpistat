@@ -7,7 +7,7 @@ info:
   license:
     name: Internal use only. All rights reserved.
     url: https://github.com/tecnickcom/rpistat/blob/main/LICENSE
-  version: 3.0.0
+  version: 3.3.0
 servers:
   - url: https://rpistat:65501/
 security:
@@ -206,7 +206,7 @@ components:
           description: Hostname name of the host.
         uptime:
           type: integer
-          description: Uptime time since last system boot.
+          description: Time elapsed since last system boot, in nanoseconds.
         memory_total:
           type: integer
           description: Total Memory in bytes.
@@ -218,7 +218,7 @@ components:
           description: Total memory used in bytes.
         memory_usage:
           type: number
-          description: Total memory used in percentage
+          description: Used memory as a fraction in the range 0..1.
         load_1m:
           type: number
           description: Load is the 1 minute load average.
@@ -242,7 +242,7 @@ components:
           description: Total disk used in bytes.
         disk_usage:
           type: number
-          description: Total disk used in percentage
+          description: Used disk space as a fraction in the range 0..1.
         network:
           type: array
           items:

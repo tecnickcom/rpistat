@@ -125,14 +125,14 @@ func New() *Client {
 		collectorNetworkRx: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: nameNetworkRx,
-				Help: "Network transmitted bytes.",
+				Help: "Network received bytes.",
 			},
 			[]string{labelNic},
 		),
 		collectorNetworkTx: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: nameNetworkTx,
-				Help: "Network of received bytes.",
+				Help: "Network transmitted bytes.",
 			},
 			[]string{labelNic},
 		),

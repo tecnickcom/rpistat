@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -147,4 +148,27 @@ func TestSetNetwork(t *testing.T) {
 
 	tc := testutil.ToFloat64(m.collectorNetworkTx)
 	require.InDelta(t, float64(tx), tc, 0.001)
+}
+
+// TestNetworkHelpText guards against regressing the (previously swapped) help
+// text of the network gauges: rx must read "received", tx "transmitted".
+func TestNetworkHelpText(t *testing.T) {
+	t.Parallel()
+
+	m := New()
+	m.SetNetwork("eth0", 100, 200)
+
+	wantRx := `# HELP rpistat_network_rx Network received bytes.
+# TYPE rpistat_network_rx gauge
+rpistat_network_rx{rpistat_nic="eth0"} 100
+`
+	err := testutil.CollectAndCompare(m.collectorNetworkRx, strings.NewReader(wantRx), nameNetworkRx)
+	require.NoError(t, err)
+
+	wantTx := `# HELP rpistat_network_tx Network transmitted bytes.
+# TYPE rpistat_network_tx gauge
+rpistat_network_tx{rpistat_nic="eth0"} 200
+`
+	err = testutil.CollectAndCompare(m.collectorNetworkTx, strings.NewReader(wantTx), nameNetworkTx)
+	require.NoError(t, err)
 }

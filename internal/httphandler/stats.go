@@ -3,6 +3,7 @@ package httphandler
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -14,9 +15,10 @@ import (
 )
 
 const (
-	loadShift       = 1 << 16
-	fileCPUTemp     = "/sys/class/thermal/thermal_zone0/temp"
-	fileNetworkStat = "/proc/net/dev"
+	loadShift              = 1 << 16
+	defaultFileCPUTemp     = "/sys/class/thermal/thermal_zone0/temp"
+	defaultFileNetworkStat = "/proc/net/dev"
+	networkStatFields      = 16
 )
 
 // NetworkStat contains network statistics for one physical interface.
@@ -85,15 +87,23 @@ type Stats struct {
 	Network []NetworkStat `json:"network"`
 
 	metric metrics.Metrics
+
+	// fileCPUTemp is the path to the CPU temperature file (overridable for testing).
+	fileCPUTemp string
+
+	// fileNetworkStat is the path to the network statistics file (overridable for testing).
+	fileNetworkStat string
 }
 
 func newStats(m metrics.Metrics) *Stats {
 	now := time.Now().UTC()
 
 	t := &Stats{
-		metric:    m,
-		DateTime:  now.Format(time.RFC3339),
-		Timestamp: now.UnixNano(),
+		metric:          m,
+		fileCPUTemp:     defaultFileCPUTemp,
+		fileNetworkStat: defaultFileNetworkStat,
+		DateTime:        now.Format(time.RFC3339),
+		Timestamp:       now.UnixNano(),
 	}
 
 	t.hostname()
@@ -124,7 +134,7 @@ func (t *Stats) sysinfo() {
 	t.MemoryTotal = uint64(u.Totalram) * uint64(u.Unit) //nolint:unconvert
 	t.MemoryFree = uint64(u.Freeram) * uint64(u.Unit)   //nolint:unconvert
 	t.MemoryUsed = t.MemoryTotal - t.MemoryFree
-	t.MemoryUsage = (float64(t.MemoryUsed) / float64(t.MemoryTotal))
+	t.MemoryUsage = usageRatio(t.MemoryUsed, t.MemoryTotal)
 	t.Load1 = float64(u.Loads[0]) / loadShift
 	t.Load5 = float64(u.Loads[1]) / loadShift
 	t.Load15 = float64(u.Loads[2]) / loadShift
@@ -139,25 +149,36 @@ func (t *Stats) sysinfo() {
 }
 
 func (t *Stats) cpuTemp() {
-	fd, err := syscall.Openat(0, fileCPUTemp, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
+	fd, err := syscall.Openat(0, t.fileCPUTemp, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil || fd < 0 {
 		return
 	}
 
-	f := os.NewFile(uintptr(fd), fileCPUTemp)
+	f := os.NewFile(uintptr(fd), t.fileCPUTemp)
 
 	defer func() { _ = syscall.Close(fd) }()
 
-	var raw uint64
-
-	_, err = fmt.Fscanln(f, &raw)
+	temp, err := parseCPUTemp(f)
 	if err != nil {
 		return
 	}
 
-	t.TempCPU = float64(raw) / 1000
+	t.TempCPU = temp
 
 	t.metric.SetTempCPU(t.TempCPU)
+}
+
+// parseCPUTemp reads the raw millidegree value emitted by a thermal zone file
+// and returns the temperature in Celsius degrees.
+func parseCPUTemp(r io.Reader) (float64, error) {
+	var raw uint64
+
+	_, err := fmt.Fscanln(r, &raw)
+	if err != nil {
+		return 0, fmt.Errorf("failed parsing CPU temperature: %w", err)
+	}
+
+	return float64(raw) / 1000, nil
 }
 
 func (t *Stats) disk() {
@@ -171,24 +192,44 @@ func (t *Stats) disk() {
 	t.DiskTotal = f.Blocks * uint64(f.Bsize) //nolint:gosec
 	t.DiskFree = f.Bfree * uint64(f.Bsize)   //nolint:gosec
 	t.DiskUsed = t.DiskTotal - t.DiskFree
-	t.DiskUsage = (float64(t.DiskUsed) / float64(t.DiskTotal))
+	t.DiskUsage = usageRatio(t.DiskUsed, t.DiskTotal)
 
 	t.metric.SetDiskTotal(t.DiskTotal)
 	t.metric.SetDiskFree(t.DiskFree)
 }
 
 func (t *Stats) network() {
-	fd, err := syscall.Openat(0, fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
+	fd, err := syscall.Openat(0, t.fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil || fd < 0 {
 		return
 	}
 
-	f := os.NewFile(uintptr(fd), fileNetworkStat)
+	f := os.NewFile(uintptr(fd), t.fileNetworkStat)
 
 	defer func() { _ = syscall.Close(fd) }()
 
-	s := bufio.NewScanner(f)
+	t.Network = parseNetworkStats(f)
 
+	for _, ns := range t.Network {
+		t.metric.SetNetwork(ns.Nic, ns.Rx, ns.Tx)
+	}
+}
+
+// excludedNic reports whether the named interface should be skipped (loopback
+// and the default docker bridge are not physical interfaces of interest).
+func excludedNic(nic string) bool {
+	return nic == "lo" || nic == "docker0"
+}
+
+// parseNetworkStats parses the content of /proc/net/dev and returns one entry
+// per relevant physical interface. Malformed lines and excluded interfaces are
+// skipped silently, matching the kernel-provided format.
+func parseNetworkStats(r io.Reader) []NetworkStat {
+	var stats []NetworkStat
+
+	s := bufio.NewScanner(r)
+
+	// skip the two header lines
 	s.Scan()
 	s.Scan()
 
@@ -199,27 +240,34 @@ func (t *Stats) network() {
 		}
 
 		nic := strings.TrimSpace(col[0])
-		if nic == "lo" || nic == "docker0" {
+		if excludedNic(nic) {
 			continue
 		}
 
 		data := strings.Fields(col[1])
-		if len(data) != 16 {
+		if len(data) != networkStatFields {
 			continue
 		}
 
 		rx, _ := strconv.ParseUint(data[0], 10, 64)
 		tx, _ := strconv.ParseUint(data[8], 10, 64)
 
-		t.Network = append(
-			t.Network,
-			NetworkStat{
-				Nic: nic,
-				Rx:  rx,
-				Tx:  tx,
-			},
-		)
-
-		t.metric.SetNetwork(nic, rx, tx)
+		stats = append(stats, NetworkStat{
+			Nic: nic,
+			Rx:  rx,
+			Tx:  tx,
+		})
 	}
+
+	return stats
+}
+
+// usageRatio returns used/total as a fraction in the range [0,1], or 0 when
+// total is 0 to avoid producing NaN (which cannot be JSON-encoded).
+func usageRatio(used, total uint64) float64 {
+	if total == 0 {
+		return 0
+	}
+
+	return float64(used) / float64(total)
 }

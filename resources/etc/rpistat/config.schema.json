@@ -189,6 +189,32 @@
       "description": "Time in seconds to wait on exit for a graceful shutdown.",
       "title": "ShutDown Timeout",
       "type": "integer"
+    },
+    "stats": {
+      "additionalProperties": false,
+      "description": "Configuration for the system statistics collection",
+      "properties": {
+        "excluded_nics": {
+          "default": [
+            "lo",
+            "docker0"
+          ],
+          "description": "Network interface names to exclude from the reported statistics",
+          "examples": [
+            [
+              "lo",
+              "docker0"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Excluded NICs",
+          "type": "array"
+        }
+      },
+      "title": "Stats",
+      "type": "object"
     }
   },
   "required": [

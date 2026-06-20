@@ -67,6 +67,9 @@ The configuration format is a single JSON structure with the following fields:
         * **address**:  Base URL of the service
         * **timeout**:  HTTP client timeout [seconds]
 
+* **stats**: Configuration for the system statistics collection
+    * **excluded_nics**: Network interface names to exclude from the reported statistics (default: ["lo", "docker0"])
+
 
 ## Formatting Configuration
 

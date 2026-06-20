@@ -12,6 +12,7 @@ import (
 	"github.com/tecnickcom/gogen/pkg/bootstrap"
 	"github.com/tecnickcom/gogen/pkg/httputil/jsendx"
 	"github.com/tecnickcom/rpistat/internal/metrics"
+	"github.com/tecnickcom/rpistat/internal/sysstat"
 )
 
 //nolint:gocognit,paralleltest,tparallel
@@ -78,7 +79,8 @@ func Test_bind(t *testing.T) {
 			}
 
 			cfg := tt.fcfg(getValidTestConfig())
-			mtr := metrics.New()
+			gatherer := sysstat.NewGatherer(sysstat.WithExcludedNics(cfg.Stats.ExcludedNics))
+			mtr := metrics.New(gatherer)
 			wg := &sync.WaitGroup{}
 			sc := make(chan struct{})
 
@@ -89,7 +91,7 @@ func Test_bind(t *testing.T) {
 					ProgramVersion: "0.0.0",
 					ProgramRelease: "0",
 				},
-				mtr,
+				gatherer,
 				wg,
 				sc,
 			)

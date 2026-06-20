@@ -16,7 +16,8 @@ func Test_appConfig_SetDefaults(t *testing.T) {
 	c.SetDefaults(v)
 
 	require.True(t, v.GetBool("enabled"))
-	require.Len(t, v.AllKeys(), 5)
+	require.Len(t, v.AllKeys(), 6)
+	require.Equal(t, []string{"lo", "docker0"}, v.GetStringSlice("stats.excluded_nics"))
 }
 
 func getValidTestConfig() appConfig {
@@ -42,6 +43,9 @@ func getValidTestConfig() appConfig {
 				Address: ":1233",
 				Timeout: 11,
 			},
+		},
+		Stats: cfgStats{
+			ExcludedNics: []string{"lo", "docker0"},
 		},
 	}
 }

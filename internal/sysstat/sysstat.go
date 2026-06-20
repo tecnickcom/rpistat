@@ -1,16 +1,19 @@
-package httphandler
+// Package sysstat gathers system usage statistics from the host. It has no
+// dependency on the HTTP or metrics layers so it can be shared by the /stats
+// JSON handler and the Prometheus collector without creating an import cycle.
+package sysstat
 
 import (
 	"bufio"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/tecnickcom/rpistat/internal/metrics"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,9 +24,14 @@ const (
 	networkStatFields      = 16
 )
 
+// defaultExcludedNics are the interfaces skipped unless overridden via config.
+//
+//nolint:gochecknoglobals
+var defaultExcludedNics = []string{"lo", "docker0"}
+
 // NetworkStat contains network statistics for one physical interface.
 type NetworkStat struct {
-	// NIC is the Network Interface Card name.
+	// Nic is the Network Interface Card name.
 	Nic string `json:"nic"`
 
 	// Rx is the total number of bytes received.
@@ -33,7 +41,7 @@ type NetworkStat struct {
 	Tx uint64 `json:"tx"`
 }
 
-// Stats contains the information to be returned.
+// Stats contains the collected system statistics.
 type Stats struct {
 	// DateTime is the human-readable date and time when the response is sent.
 	DateTime string `json:"datetime"`
@@ -85,87 +93,106 @@ type Stats struct {
 
 	// Network contains an array of network statistics, one entry for each physical interface.
 	Network []NetworkStat `json:"network"`
-
-	metric metrics.Metrics
-
-	// fileCPUTemp is the path to the CPU temperature file (overridable for testing).
-	fileCPUTemp string
-
-	// fileNetworkStat is the path to the network statistics file (overridable for testing).
-	fileNetworkStat string
 }
 
-func newStats(m metrics.Metrics) *Stats {
-	now := time.Now().UTC()
+// Gatherer collects system statistics from the host.
+type Gatherer struct {
+	log             *slog.Logger
+	fileCPUTemp     string
+	fileNetworkStat string
+	excludedNics    map[string]struct{}
+}
 
-	t := &Stats{
-		metric:          m,
+// NewGatherer creates a Gatherer with sensible defaults, overridable via options.
+func NewGatherer(opts ...Option) *Gatherer {
+	g := &Gatherer{
+		log:             slog.New(slog.DiscardHandler),
 		fileCPUTemp:     defaultFileCPUTemp,
 		fileNetworkStat: defaultFileNetworkStat,
-		DateTime:        now.Format(time.RFC3339),
-		Timestamp:       now.UnixNano(),
+		excludedNics:    toSet(defaultExcludedNics),
 	}
 
-	t.hostname()
-	t.sysinfo()
-	t.cpuTemp()
-	t.disk()
-	t.network()
+	for _, opt := range opts {
+		opt(g)
+	}
 
-	return t
+	return g
 }
 
-func (t *Stats) hostname() {
+func toSet(items []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		set[item] = struct{}{}
+	}
+
+	return set
+}
+
+// Gather collects a fresh snapshot of the system statistics.
+func (g *Gatherer) Gather() *Stats {
+	now := time.Now().UTC()
+
+	s := &Stats{
+		DateTime:  now.Format(time.RFC3339),
+		Timestamp: now.UnixNano(),
+	}
+
+	g.hostname(s)
+	g.sysinfo(s)
+	g.cpuTemp(s)
+	g.disk(s)
+	g.network(s)
+
+	return s
+}
+
+func (g *Gatherer) hostname(s *Stats) {
 	hostname, err := os.Hostname()
-	if err == nil {
-		t.Hostname = hostname
+	if err != nil {
+		g.log.Debug("failed reading hostname", slog.Any("error", err))
+		return
 	}
+
+	s.Hostname = hostname
 }
 
-func (t *Stats) sysinfo() {
+func (g *Gatherer) sysinfo(s *Stats) {
 	var u unix.Sysinfo_t
 
 	err := unix.Sysinfo(&u)
 	if err != nil {
+		g.log.Debug("failed reading sysinfo", slog.Any("error", err))
 		return
 	}
 
-	t.Uptime = time.Duration(u.Uptime) * time.Second
-	t.MemoryTotal = uint64(u.Totalram) * uint64(u.Unit) //nolint:unconvert
-	t.MemoryFree = uint64(u.Freeram) * uint64(u.Unit)   //nolint:unconvert
-	t.MemoryUsed = t.MemoryTotal - t.MemoryFree
-	t.MemoryUsage = usageRatio(t.MemoryUsed, t.MemoryTotal)
-	t.Load1 = float64(u.Loads[0]) / loadShift
-	t.Load5 = float64(u.Loads[1]) / loadShift
-	t.Load15 = float64(u.Loads[2]) / loadShift
-
-	// metrics
-	t.metric.SetUptime(t.Uptime)
-	t.metric.SetMemoryTotal(t.MemoryTotal)
-	t.metric.SetMemoryFree(t.MemoryFree)
-	t.metric.SetLoad1(t.Load1)
-	t.metric.SetLoad5(t.Load5)
-	t.metric.SetLoad15(t.Load15)
+	s.Uptime = time.Duration(u.Uptime) * time.Second
+	s.MemoryTotal = uint64(u.Totalram) * uint64(u.Unit) //nolint:unconvert
+	s.MemoryFree = uint64(u.Freeram) * uint64(u.Unit)   //nolint:unconvert
+	s.MemoryUsed = s.MemoryTotal - s.MemoryFree
+	s.MemoryUsage = usageRatio(s.MemoryUsed, s.MemoryTotal)
+	s.Load1 = float64(u.Loads[0]) / loadShift
+	s.Load5 = float64(u.Loads[1]) / loadShift
+	s.Load15 = float64(u.Loads[2]) / loadShift
 }
 
-func (t *Stats) cpuTemp() {
-	fd, err := syscall.Openat(0, t.fileCPUTemp, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
+func (g *Gatherer) cpuTemp(s *Stats) {
+	fd, err := syscall.Openat(0, g.fileCPUTemp, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil || fd < 0 {
+		g.log.Debug("failed opening CPU temperature file", slog.String("path", g.fileCPUTemp), slog.Any("error", err))
 		return
 	}
 
-	f := os.NewFile(uintptr(fd), t.fileCPUTemp)
+	f := os.NewFile(uintptr(fd), g.fileCPUTemp)
 
 	defer func() { _ = syscall.Close(fd) }()
 
 	temp, err := parseCPUTemp(f)
 	if err != nil {
+		g.log.Debug("failed parsing CPU temperature", slog.Any("error", err))
 		return
 	}
 
-	t.TempCPU = temp
-
-	t.metric.SetTempCPU(t.TempCPU)
+	s.TempCPU = temp
 }
 
 // parseCPUTemp reads the raw millidegree value emitted by a thermal zone file
@@ -181,50 +208,39 @@ func parseCPUTemp(r io.Reader) (float64, error) {
 	return float64(raw) / 1000, nil
 }
 
-func (t *Stats) disk() {
+func (g *Gatherer) disk(s *Stats) {
 	f := syscall.Statfs_t{}
 
 	err := syscall.Statfs("/", &f)
 	if err != nil {
+		g.log.Debug("failed reading disk stats", slog.Any("error", err))
 		return
 	}
 
-	t.DiskTotal = f.Blocks * uint64(f.Bsize) //nolint:gosec
-	t.DiskFree = f.Bfree * uint64(f.Bsize)   //nolint:gosec
-	t.DiskUsed = t.DiskTotal - t.DiskFree
-	t.DiskUsage = usageRatio(t.DiskUsed, t.DiskTotal)
-
-	t.metric.SetDiskTotal(t.DiskTotal)
-	t.metric.SetDiskFree(t.DiskFree)
+	s.DiskTotal = f.Blocks * uint64(f.Bsize) //nolint:gosec
+	s.DiskFree = f.Bfree * uint64(f.Bsize)   //nolint:gosec
+	s.DiskUsed = s.DiskTotal - s.DiskFree
+	s.DiskUsage = usageRatio(s.DiskUsed, s.DiskTotal)
 }
 
-func (t *Stats) network() {
-	fd, err := syscall.Openat(0, t.fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
+func (g *Gatherer) network(s *Stats) {
+	fd, err := syscall.Openat(0, g.fileNetworkStat, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil || fd < 0 {
+		g.log.Debug("failed opening network stats file", slog.String("path", g.fileNetworkStat), slog.Any("error", err))
 		return
 	}
 
-	f := os.NewFile(uintptr(fd), t.fileNetworkStat)
+	f := os.NewFile(uintptr(fd), g.fileNetworkStat)
 
 	defer func() { _ = syscall.Close(fd) }()
 
-	t.Network = parseNetworkStats(f)
-
-	for _, ns := range t.Network {
-		t.metric.SetNetwork(ns.Nic, ns.Rx, ns.Tx)
-	}
-}
-
-// excludedNic reports whether the named interface should be skipped (loopback
-// and the default docker bridge are not physical interfaces of interest).
-func excludedNic(nic string) bool {
-	return nic == "lo" || nic == "docker0"
+	s.Network = parseNetworkStats(f, g.excludedNics)
 }
 
 // parseNetworkStats parses the content of /proc/net/dev and returns one entry
 // per relevant physical interface. Malformed lines and excluded interfaces are
 // skipped silently, matching the kernel-provided format.
-func parseNetworkStats(r io.Reader) []NetworkStat {
+func parseNetworkStats(r io.Reader, excluded map[string]struct{}) []NetworkStat {
 	var stats []NetworkStat
 
 	s := bufio.NewScanner(r)
@@ -240,7 +256,7 @@ func parseNetworkStats(r io.Reader) []NetworkStat {
 		}
 
 		nic := strings.TrimSpace(col[0])
-		if excludedNic(nic) {
+		if _, ok := excluded[nic]; ok {
 			continue
 		}
 

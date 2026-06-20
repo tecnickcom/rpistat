@@ -44,6 +44,12 @@ type cfgClients struct {
 	Ipify cfgClientIpify `mapstructure:"ipify" validate:"required"`
 }
 
+// cfgStats contains the configuration for the system statistics collection.
+type cfgStats struct {
+	// ExcludedNics lists the network interface names to skip when reporting statistics.
+	ExcludedNics []string `mapstructure:"excluded_nics"`
+}
+
 // appConfig contains the full application configuration.
 type appConfig struct {
 	config.BaseConfig `mapstructure:",squash" validate:"required"`
@@ -51,6 +57,7 @@ type appConfig struct {
 	Enabled bool       `mapstructure:"enabled"`
 	Servers cfgServers `mapstructure:"servers" validate:"required"`
 	Clients cfgClients `mapstructure:"clients" validate:"required"`
+	Stats   cfgStats   `mapstructure:"stats"`
 }
 
 // SetDefaults sets the default configuration values in Viper.
@@ -62,6 +69,8 @@ func (c *appConfig) SetDefaults(v config.Viper) {
 
 	v.SetDefault("clients.ipify.address", "https://api.ipify.org")
 	v.SetDefault("clients.ipify.timeout", 1)
+
+	v.SetDefault("stats.excluded_nics", []string{"lo", "docker0"})
 }
 
 // Validate performs the validation of the configuration values.

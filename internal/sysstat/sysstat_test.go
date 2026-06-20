@@ -1,7 +1,9 @@
-package httphandler
+package sysstat
 
 import (
+	"bytes"
 	"encoding/json"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
@@ -9,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tecnickcom/rpistat/internal/metrics"
 )
 
 func TestUsageRatio(t *testing.T) {
@@ -85,42 +86,67 @@ docker0:  200  2 0 0 0 0 0 0  300  3 0 0 0 0 0 0
 func TestParseNetworkStats(t *testing.T) {
 	t.Parallel()
 
+	defaultExcluded := toSet(defaultExcludedNics)
+
 	tests := []struct {
-		name  string
-		input string
-		want  []NetworkStat
+		name     string
+		input    string
+		excluded map[string]struct{}
+		want     []NetworkStat
 	}{
 		{
-			name:  "physical interfaces parsed, lo and docker0 skipped",
-			input: procNetDev,
+			name:     "physical interfaces parsed, lo and docker0 skipped",
+			input:    procNetDev,
+			excluded: defaultExcluded,
 			want: []NetworkStat{
 				{Nic: "eth0", Rx: 5000, Tx: 6000},
 				{Nic: "wlan0", Rx: 700, Tx: 800},
 			},
 		},
 		{
-			name:  "empty input",
-			input: "",
-			want:  nil,
+			name:     "custom exclusion list skips eth0",
+			input:    procNetDev,
+			excluded: toSet([]string{"eth0"}),
+			want: []NetworkStat{
+				{Nic: "lo", Rx: 100, Tx: 100},
+				{Nic: "docker0", Rx: 200, Tx: 300},
+				{Nic: "wlan0", Rx: 700, Tx: 800},
+			},
 		},
 		{
-			name:  "only headers",
-			input: "header1\nheader2\n",
-			want:  nil,
+			name:     "empty exclusion list keeps everything",
+			input:    procNetDev,
+			excluded: toSet(nil),
+			want: []NetworkStat{
+				{Nic: "lo", Rx: 100, Tx: 100},
+				{Nic: "docker0", Rx: 200, Tx: 300},
+				{Nic: "eth0", Rx: 5000, Tx: 6000},
+				{Nic: "wlan0", Rx: 700, Tx: 800},
+			},
 		},
 		{
-			name: "line without colon is skipped",
-			input: "header1\nheader2\n" +
-				"garbage line without a colon\n" +
-				"  eth0: 1 2 0 0 0 0 0 0 3 4 0 0 0 0 0 0\n",
-			want: []NetworkStat{{Nic: "eth0", Rx: 1, Tx: 3}},
+			name:     "empty input",
+			input:    "",
+			excluded: defaultExcluded,
+			want:     nil,
 		},
 		{
-			name: "line with wrong field count is skipped",
-			input: "header1\nheader2\n" +
-				"  bad0: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15\n" +
-				"  eth0: 9 2 0 0 0 0 0 0 8 4 0 0 0 0 0 0\n",
-			want: []NetworkStat{{Nic: "eth0", Rx: 9, Tx: 8}},
+			name:     "only headers",
+			input:    "header1\nheader2\n",
+			excluded: defaultExcluded,
+			want:     nil,
+		},
+		{
+			name:     "line without colon is skipped",
+			input:    "header1\nheader2\ngarbage line without a colon\n  eth0: 1 2 0 0 0 0 0 0 3 4 0 0 0 0 0 0\n",
+			excluded: defaultExcluded,
+			want:     []NetworkStat{{Nic: "eth0", Rx: 1, Tx: 3}},
+		},
+		{
+			name:     "line with wrong field count is skipped",
+			input:    "header1\nheader2\n  bad0: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15\n  eth0: 9 2 0 0 0 0 0 0 8 4 0 0 0 0 0 0\n",
+			excluded: defaultExcluded,
+			want:     []NetworkStat{{Nic: "eth0", Rx: 9, Tx: 8}},
 		},
 	}
 
@@ -128,54 +154,36 @@ func TestParseNetworkStats(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := parseNetworkStats(strings.NewReader(tt.input))
+			got := parseNetworkStats(strings.NewReader(tt.input), tt.excluded)
 			require.Equal(t, tt.want, got)
 		})
 	}
 }
 
-func TestExcludedNic(t *testing.T) {
-	t.Parallel()
-
-	require.True(t, excludedNic("lo"))
-	require.True(t, excludedNic("docker0"))
-	require.False(t, excludedNic("eth0"))
-	require.False(t, excludedNic("wlan0"))
-}
-
-// TestStatsCPUTempFromFile exercises the cpuTemp wrapper end to end against a
+// TestGatherCPUTempFromFile exercises the cpuTemp path end to end against a
 // real file, covering the syscall open and delegation to parseCPUTemp.
-func TestStatsCPUTempFromFile(t *testing.T) {
+func TestGatherCPUTempFromFile(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "temp")
 	require.NoError(t, os.WriteFile(path, []byte("48500\n"), 0o600))
 
-	s := &Stats{metric: metrics.New(), fileCPUTemp: path}
-	s.cpuTemp()
+	g := NewGatherer(WithCPUTempFile(path))
+	s := g.Gather()
 
 	require.InDelta(t, 48.5, s.TempCPU, 0.0001)
 }
 
-func TestStatsCPUTempMissingFile(t *testing.T) {
-	t.Parallel()
-
-	s := &Stats{metric: metrics.New(), fileCPUTemp: filepath.Join(t.TempDir(), "missing")}
-	s.cpuTemp()
-
-	require.InDelta(t, 0, s.TempCPU, 0.0001)
-}
-
-// TestStatsNetworkFromFile exercises the network wrapper end to end against a
-// real file, covering the syscall open and delegation to parseNetworkStats.
-func TestStatsNetworkFromFile(t *testing.T) {
+// TestGatherNetworkFromFile exercises the network path end to end against a
+// real file, covering the syscall open, exclusions, and parsing.
+func TestGatherNetworkFromFile(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "dev")
 	require.NoError(t, os.WriteFile(path, []byte(procNetDev), 0o600))
 
-	s := &Stats{metric: metrics.New(), fileNetworkStat: path}
-	s.network()
+	g := NewGatherer(WithNetworkStatFile(path), WithExcludedNics([]string{"lo", "docker0"}))
+	s := g.Gather()
 
 	require.Equal(t, []NetworkStat{
 		{Nic: "eth0", Rx: 5000, Tx: 6000},
@@ -183,22 +191,32 @@ func TestStatsNetworkFromFile(t *testing.T) {
 	}, s.Network)
 }
 
-func TestStatsNetworkMissingFile(t *testing.T) {
+// TestGatherCPUTempParseError covers the path where the file opens but its
+// content cannot be parsed: the temperature stays zero and the error is logged.
+func TestGatherCPUTempParseError(t *testing.T) {
 	t.Parallel()
 
-	s := &Stats{metric: metrics.New(), fileNetworkStat: filepath.Join(t.TempDir(), "missing")}
-	s.network()
+	path := filepath.Join(t.TempDir(), "temp")
+	require.NoError(t, os.WriteFile(path, []byte("not-a-number\n"), 0o600))
 
-	require.Empty(t, s.Network)
+	var buf bytes.Buffer
+
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	g := NewGatherer(WithLogger(logger), WithCPUTempFile(path))
+	s := g.Gather()
+
+	require.InDelta(t, 0, s.TempCPU, 0.0001)
+	require.Contains(t, buf.String(), "failed parsing CPU temperature")
 }
 
-// TestNewStatsJSONEncodable verifies the full stats payload always encodes to
+// TestGatherJSONEncodable verifies the gathered snapshot always encodes to
 // valid JSON (NaN/Inf would make encoding/json fail) and the usage fields stay
 // within the documented [0,1] range.
-func TestNewStatsJSONEncodable(t *testing.T) {
+func TestGatherJSONEncodable(t *testing.T) {
 	t.Parallel()
 
-	s := newStats(metrics.New())
+	s := NewGatherer().Gather()
 
 	raw, err := json.Marshal(s)
 	require.NoError(t, err)
@@ -206,7 +224,6 @@ func TestNewStatsJSONEncodable(t *testing.T) {
 	var decoded Stats
 
 	require.NoError(t, json.Unmarshal(raw, &decoded))
-
 	require.False(t, math.IsNaN(s.MemoryUsage))
 	require.False(t, math.IsNaN(s.DiskUsage))
 	require.GreaterOrEqual(t, s.MemoryUsage, 0.0)
@@ -215,18 +232,25 @@ func TestNewStatsJSONEncodable(t *testing.T) {
 	require.LessOrEqual(t, s.DiskUsage, 1.0)
 }
 
-// TestStatsZeroTotalsEncode confirms that a payload built from zero totals (so
-// usage ratios are guarded to 0) still encodes without a NaN error.
-func TestStatsZeroTotalsEncode(t *testing.T) {
+// TestGatherLogsErrors verifies that otherwise-swallowed collection errors are
+// logged at debug level when a logger is provided.
+func TestGatherLogsErrors(t *testing.T) {
 	t.Parallel()
 
-	s := &Stats{
-		MemoryUsage: usageRatio(0, 0),
-		DiskUsage:   usageRatio(0, 0),
-	}
+	var buf bytes.Buffer
 
-	raw, err := json.Marshal(s)
-	require.NoError(t, err)
-	require.Contains(t, string(raw), `"memory_usage":0`)
-	require.Contains(t, string(raw), `"disk_usage":0`)
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	missingDir := t.TempDir()
+	g := NewGatherer(
+		WithLogger(logger),
+		WithCPUTempFile(filepath.Join(missingDir, "missing-temp")),
+		WithNetworkStatFile(filepath.Join(missingDir, "missing-dev")),
+	)
+
+	g.Gather()
+
+	out := buf.String()
+	require.Contains(t, out, "failed opening CPU temperature file")
+	require.Contains(t, out, "failed opening network stats file")
 }

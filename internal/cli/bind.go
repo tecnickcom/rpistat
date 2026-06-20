@@ -18,11 +18,11 @@ import (
 	"github.com/tecnickcom/gogen/pkg/metrics"
 	"github.com/tecnickcom/gogen/pkg/traceid"
 	"github.com/tecnickcom/rpistat/internal/httphandler"
-	instr "github.com/tecnickcom/rpistat/internal/metrics"
+	"github.com/tecnickcom/rpistat/internal/sysstat"
 )
 
 // bind is the entry point of the service, this is where the wiring of all components happens.
-func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.WaitGroup, sc chan struct{}) bootstrap.BindFunc {
+func bind(cfg *appConfig, appInfo *jsendx.AppInfo, gatherer *sysstat.Gatherer, wg *sync.WaitGroup, sc chan struct{}) bootstrap.BindFunc {
 	return func(ctx context.Context, l *slog.Logger, m metrics.Client) error {
 		jsx := jsendx.NewJSXResp(httputil.NewHTTPResp(l))
 
@@ -56,7 +56,7 @@ func bind(cfg *appConfig, appInfo *jsendx.AppInfo, mtr instr.Metrics, wg *sync.W
 
 		if cfg.Enabled {
 			// wire the binder
-			serviceBinder = httphandler.New(l, mtr)
+			serviceBinder = httphandler.New(l, gatherer)
 
 			// override the default healthcheck handler
 			healthCheckHandler := healthcheck.NewHandler(

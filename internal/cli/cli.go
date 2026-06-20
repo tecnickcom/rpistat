@@ -12,8 +12,10 @@ import (
 	"github.com/tecnickcom/gogen/pkg/bootstrap"
 	"github.com/tecnickcom/gogen/pkg/config"
 	"github.com/tecnickcom/gogen/pkg/httputil/jsendx"
+	"github.com/tecnickcom/gogen/pkg/logsrv"
 	"github.com/tecnickcom/gogen/pkg/logutil"
 	"github.com/tecnickcom/rpistat/internal/metrics"
+	"github.com/tecnickcom/rpistat/internal/sysstat"
 )
 
 type bootstrapFunc func(bindFn bootstrap.BindFunc, opts ...bootstrap.Option) error
@@ -86,9 +88,16 @@ func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, er
 			ProgramRelease: release,
 		}
 
+		// Initialize the system statistics gatherer
+
+		gatherer := sysstat.NewGatherer(
+			sysstat.WithLogger(logsrv.NewLogger(logcfg)),
+			sysstat.WithExcludedNics(cfg.Stats.ExcludedNics),
+		)
+
 		// Initialize metrics
 
-		mtr := metrics.New()
+		mtr := metrics.New(gatherer)
 
 		// Wait group used for graceful shutdown of all dependants (e.g.: servers).
 		wg := &sync.WaitGroup{}
@@ -98,7 +107,7 @@ func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, er
 
 		// Boostrap application
 		return bootstrapFn(
-			bind(cfg, appInfo, mtr, wg, sc),
+			bind(cfg, appInfo, gatherer, wg, sc),
 			bootstrap.WithLogConfig(logcfg),
 			bootstrap.WithCreateMetricsClientFunc(mtr.CreateMetricsClientFunc),
 			bootstrap.WithShutdownTimeout(time.Duration(cfg.ShutdownTimeout)*time.Second),

@@ -20,7 +20,10 @@
     "monitoring": {
       "address": ":65501",
       "timeout": 5
-    } 
+    }
+  },
+  "stats": {
+    "excluded_nics": ["lo", "docker0"]
   },
   "shutdown_timeout": 30
 }

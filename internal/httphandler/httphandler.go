@@ -8,20 +8,25 @@ import (
 
 	"github.com/tecnickcom/gogen/pkg/httpserver"
 	"github.com/tecnickcom/gogen/pkg/httputil"
-	"github.com/tecnickcom/rpistat/internal/metrics"
+	"github.com/tecnickcom/rpistat/internal/sysstat"
 )
+
+// StatsGatherer provides a fresh system snapshot on demand.
+type StatsGatherer interface {
+	Gather() *sysstat.Stats
+}
 
 // HTTPHandler is the struct containing all the http handlers.
 type HTTPHandler struct {
-	httpres *httputil.HTTPResp
-	metric  metrics.Metrics
+	httpres  *httputil.HTTPResp
+	gatherer StatsGatherer
 }
 
 // New creates a new instance of the HTTP handler.
-func New(l *slog.Logger, m metrics.Metrics) *HTTPHandler {
+func New(l *slog.Logger, gatherer StatsGatherer) *HTTPHandler {
 	return &HTTPHandler{
-		httpres: httputil.NewHTTPResp(l),
-		metric:  m,
+		httpres:  httputil.NewHTTPResp(l),
+		gatherer: gatherer,
 	}
 }
 
@@ -38,5 +43,5 @@ func (h *HTTPHandler) BindHTTP(_ context.Context) []httpserver.Route {
 }
 
 func (h *HTTPHandler) handleStats(w http.ResponseWriter, r *http.Request) {
-	h.httpres.SendJSON(r.Context(), w, http.StatusOK, newStats(h.metric))
+	h.httpres.SendJSON(r.Context(), w, http.StatusOK, h.gatherer.Gather())
 }

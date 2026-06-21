@@ -184,7 +184,10 @@ func (g *Gatherer) cpuTemp(s *Stats) {
 
 	f := os.NewFile(uintptr(fd), g.fileCPUTemp)
 
-	defer func() { _ = syscall.Close(fd) }()
+	// Close through the *os.File so its finalizer is cleared; closing the raw
+	// fd directly would leave the finalizer to close the (possibly recycled)
+	// descriptor a second time.
+	defer func() { _ = f.Close() }()
 
 	temp, err := parseCPUTemp(f)
 	if err != nil {
@@ -232,7 +235,10 @@ func (g *Gatherer) network(s *Stats) {
 
 	f := os.NewFile(uintptr(fd), g.fileNetworkStat)
 
-	defer func() { _ = syscall.Close(fd) }()
+	// Close through the *os.File so its finalizer is cleared; closing the raw
+	// fd directly would leave the finalizer to close the (possibly recycled)
+	// descriptor a second time.
+	defer func() { _ = f.Close() }()
 
 	s.Network = parseNetworkStats(f, g.excludedNics)
 }

@@ -25,8 +25,8 @@ If this project is useful to you, please consider [supporting development via Gi
 ## TOC
 * [Description](#description)
 * [Documentation](#documentation)
-	* [public](#documentation_public)
-		* [General](#documentation_public_general)
+  * [public](#documentation_public)
+    * [General](#documentation_public_general)
 * [Development](#development)
 * [Deployment](#deployment)
 
@@ -100,10 +100,10 @@ curl 192.168.1.2:65501/stats
 ## Documentation
 <a name="documentation_public"></a>
 * public
-	<a name="documentation_public_general"></a>
-	* General  
-	_General project documentation_
-		* [GitHup project page](https://github.com/tecnickcom/rpistat)
+  <a name="documentation_public_general"></a>
+  * General
+    _General project documentation_
+    * [GitHub project page](https://github.com/tecnickcom/rpistat)
 
 
 ----------
@@ -177,7 +177,7 @@ DEVMODE=LOCAL make format clean mod deps generate qa build docker dockertest
 <a name="gendoc"></a>
 ## Documentation
 
-The `README.md` documentation file is generated using the source templates in `doc/src` via `make gendoc` command.
+The `README.md` documentation file is generated using the source templates in `doc/src` via the `make gendoc` command.
 
 To update links and common information edit the file `doc/src/config.yaml` in YAML format.
 The schema of the configuration file is defined by the JSON schema: `doc/src/config.schema.json`.
@@ -199,13 +199,13 @@ Flags:
 
 -c, --configDir  string  Configuration directory to be added on top of the search list
 -f, --logFormat  string  Logging format: CONSOLE, JSON
--o, --loglevel   string  Log level: EMERGENCY, ALERT, CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
+-o, --logLevel   string  Log level: EMERGENCY, ALERT, CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
 ```
 
 <a name="examples"></a>
 ## Examples
 
-Once the application has being compiled with `make build`, it can be quickly tested:
+Once the application has been compiled with `make build`, it can be quickly tested:
 
 ```bash
 target/usr/bin/rpistat -c resources/test/etc/rpistat
@@ -259,7 +259,7 @@ This service provides [PPROF](https://github.com/google/pprof) profiling data at
 The pprof data can be analyzed and displayed using the pprof tool:
 
 ```
-go get github.com/google/pprof
+go install github.com/google/pprof@latest
 ```
 
 Example:
@@ -272,9 +272,9 @@ pprof -seconds 10 -http=localhost:8182 http://INSTANCE_URL:PORT/pprof/profile
 <a name="openapi"></a>
 ## OpenAPI
 
-The rpistat API is specified via the [OpenAPI 3](https://www.openapis.org/) file: `openapi.yaml`.
+The rpistat API is specified via the [OpenAPI 3](https://www.openapis.org/) file: `openapi_monitoring.yaml`.
 
-The openapi file can be edited using the Swagger Editor:
+The OpenAPI file can be edited using the Swagger Editor:
 
 ```
 docker pull swaggerapi/swagger-editor

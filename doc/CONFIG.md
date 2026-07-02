@@ -1,6 +1,6 @@
 # Configuration Guide
 
-The rpistat service can load the configuration either from a local configuration file or remotely via [Consul](https://www.consul.io/), [Etcd](https://github.com/coreos/etcd) or a single Environmental Variable.
+The rpistat service can load the configuration either from a local configuration file or remotely via [Consul](https://www.consul.io/), [Etcd](https://github.com/etcd-io/etcd) or a single environment variable.
 
 The local configuration file is always loaded before the remote configuration, the latter always overwrites any local setting.
 
@@ -26,8 +26,8 @@ The configuration fields are:
 * **remoteConfigProvider**      : Remote configuration source ("consul", "etcd", "envvar")
 * **remoteConfigEndpoint**      : Remote configuration URL (ip:port)
 * **remoteConfigPath**          : Remote configuration path in which to search for the configuration file (e.g. "/config/rpistat")
-* **remoteConfigSecretKeyring** : Path to the [OpenPGP](http://openpgp.org/) secret keyring used to decrypt the remote configuration data (e.g. "/etc/rpistat/configkey.gpg"); if empty a non secure connection will be used instead
-* **remoteConfigData**          : Base64 encoded JSON configuration data to be used with the "envvar" provider
+* **remoteConfigSecretKeyring** : Path to the [OpenPGP](https://www.openpgp.org/) secret keyring used to decrypt the remote configuration data (e.g. "/etc/rpistat/configkey.gpg"); if empty a non-secure connection will be used instead
+* **remoteConfigData**          : Base64 encoded JSON configuration data to be used with the "envvar" provider (can only be set via the RPISTAT_REMOTECONFIGDATA environment variable, not in the configuration file)
 
 The equivalent environment variables are:
 
@@ -45,7 +45,7 @@ The configuration format is a single JSON structure with the following fields:
 * **remoteConfigProvider**      : Remote configuration source ("consul", "etcd", "envvar")
 * **remoteConfigEndpoint**      : Remote configuration URL (ip:port)
 * **remoteConfigPath**          : Remote configuration path in which to search for the configuration file (e.g. "/config/rpistat")
-* **remoteConfigSecretKeyring** : Path to the openpgp secret keyring used to decrypt the remote configuration data (e.g. "/etc/rpistat/configkey.gpg"); if empty a non secure connection will be used instead
+* **remoteConfigSecretKeyring** : Path to the OpenPGP secret keyring used to decrypt the remote configuration data (e.g. "/etc/rpistat/configkey.gpg"); if empty a non-secure connection will be used instead
 
 * **enabled**: Enable or disable the service
 
@@ -73,7 +73,7 @@ The configuration format is a single JSON structure with the following fields:
 
 ## Formatting Configuration
 
-All configuration files are formatted and ordered by key using the [jq](https://github.com/stedolan/jq) tool.
+All configuration files are formatted and ordered by key using the [jq](https://github.com/jqlang/jq) tool.
 For example:
 
 ```cat 'resources/etc/rpistat/config.schema.json' | jq -S .```

@@ -22,9 +22,7 @@ import (
 
 type bootstrapFunc func(bindFn bootstrap.BindFunc, opts ...bootstrap.Option) error
 
-// New creates an new CLI instance.
-//
-//nolint:gocognit
+// New creates a new CLI instance.
 func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, error) {
 	var (
 		argConfigDir string
@@ -51,38 +49,11 @@ func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, er
 			return fmt.Errorf("failed loading config: %w", err)
 		}
 
-		// Configure logger
-
-		if argLogFormat != "" {
-			cfg.Log.Format = argLogFormat
-		}
-
-		logFormat, err := logutil.ParseFormat(cfg.Log.Format)
+		// Configure logger, applying the optional CLI overrides.
+		logcfg, err := newLogConfig(cfg, version, release, argLogFormat, argLogLevel)
 		if err != nil {
-			return fmt.Errorf("log config error: %w", err)
+			return err
 		}
-
-		if argLogLevel != "" {
-			cfg.Log.Level = argLogLevel
-		}
-
-		logLevel, err := logutil.ParseLevel(cfg.Log.Level)
-		if err != nil {
-			return fmt.Errorf("log config error: %w", err)
-		}
-
-		logattr := []logutil.Attr{
-			slog.String("program", AppName),
-			slog.String("version", version),
-			slog.String("release", release),
-		}
-
-		logcfg, _ := logutil.NewConfig(
-			logutil.WithOutWriter(os.Stderr),
-			logutil.WithFormat(logFormat),
-			logutil.WithLevel(logLevel),
-			logutil.WithCommonAttr(logattr...),
-		)
 
 		appInfo := &jsendx.AppInfo{
 			ProgramName:    AppName,
@@ -107,7 +78,7 @@ func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, er
 		// Channel used to signal the shutdown process to all dependants.
 		sc := make(chan struct{})
 
-		// Boostrap application
+		// Bootstrap application
 		return bootstrapFn(
 			bind(cfg, appInfo, gatherer, wg, sc),
 			bootstrap.WithLogConfig(logcfg),
@@ -139,4 +110,45 @@ func New(version, release string, bootstrapFn bootstrapFunc) (*cobra.Command, er
 	}
 
 	return rootCmd, nil
+}
+
+// newLogConfig builds the logger configuration from the loaded config, applying
+// the optional command-line overrides for log format and level and tagging every
+// record with the program name, version, and release for release correlation.
+func newLogConfig(cfg *appConfig, version, release, argLogFormat, argLogLevel string) (*logutil.Config, error) {
+	if argLogFormat != "" {
+		cfg.Log.Format = argLogFormat
+	}
+
+	logFormat, err := logutil.ParseFormat(cfg.Log.Format)
+	if err != nil {
+		return nil, fmt.Errorf("log config error: %w", err)
+	}
+
+	if argLogLevel != "" {
+		cfg.Log.Level = argLogLevel
+	}
+
+	logLevel, err := logutil.ParseLevel(cfg.Log.Level)
+	if err != nil {
+		return nil, fmt.Errorf("log config error: %w", err)
+	}
+
+	logattr := []logutil.Attr{
+		slog.String("program", AppName),
+		slog.String("version", version),
+		slog.String("release", release),
+	}
+
+	// logFormat and logLevel were already parsed and validated above and the
+	// other options are static, so NewConfig cannot fail here; the error is
+	// intentionally discarded.
+	logcfg, _ := logutil.NewConfig(
+		logutil.WithOutWriter(os.Stderr),
+		logutil.WithFormat(logFormat),
+		logutil.WithLevel(logLevel),
+		logutil.WithCommonAttr(logattr...),
+	)
+
+	return logcfg, nil
 }

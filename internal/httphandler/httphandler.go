@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/tecnickcom/gogen/pkg/httpserver"
-	"github.com/tecnickcom/gogen/pkg/httputil"
+	"github.com/tecnickcom/nurago/pkg/httpserver"
+	"github.com/tecnickcom/nurago/pkg/httputil"
 	"github.com/tecnickcom/rpistat/internal/sysstat"
 )
 

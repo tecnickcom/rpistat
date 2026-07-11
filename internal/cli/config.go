@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/tecnickcom/gogen/pkg/config"
-	"github.com/tecnickcom/gogen/pkg/validator"
+	"github.com/tecnickcom/nurago/pkg/config"
+	"github.com/tecnickcom/nurago/pkg/validator"
 )
 
 const (

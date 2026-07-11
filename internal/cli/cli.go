@@ -11,11 +11,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/tecnickcom/gogen/pkg/bootstrap"
-	"github.com/tecnickcom/gogen/pkg/config"
-	"github.com/tecnickcom/gogen/pkg/httputil/jsendx"
-	"github.com/tecnickcom/gogen/pkg/logsrv"
-	"github.com/tecnickcom/gogen/pkg/logutil"
+	"github.com/tecnickcom/nurago/pkg/bootstrap"
+	"github.com/tecnickcom/nurago/pkg/config"
+	"github.com/tecnickcom/nurago/pkg/httputil/jsendx"
+	"github.com/tecnickcom/nurago/pkg/logsrv"
+	"github.com/tecnickcom/nurago/pkg/logutil"
 	"github.com/tecnickcom/rpistat/internal/metrics"
 	"github.com/tecnickcom/rpistat/internal/sysstat"
 )

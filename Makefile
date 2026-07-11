@@ -162,6 +162,7 @@ GOTEST=$(GO) test
 GODOC=GOPATH=$(GOPATH) $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
 GOLANGCILINTVERSION=v2.12.2
+GOVULNCHECK=$(GO) tool govulncheck
 DOCKERIZEVERSION=v0.9.2
 
 # Current operating system and architecture as one string.
@@ -556,6 +557,13 @@ ifneq ($(strip $(SSLCONFIGPATH)),)
 	find $(PATHINSTSSLCFG) -type f -exec chmod 644 {} \;
 endif
 
+## Check dependencies for known vulnerabilities
+.PHONY: govulncheck
+govulncheck:
+	@echo -e "\n\n>>> START: Vulnerability check <<<\n\n"
+	$(GOVULNCHECK) $(CMDDIR)/... $(SRCDIR)/...
+	@echo -e "\n\n>>> END: Vulnerability check <<<\n\n"
+
 ## Execute multiple linter tools
 .PHONY: linter
 linter:
@@ -580,7 +588,7 @@ ping:
 
 ## Run all tests and static analysis tools
 .PHONY: qa
-qa: linter confcheck test coverage
+qa: linter govulncheck confcheck test coverage
 
 ## Retry the ping command automatically (try 60 times every 5 sec = 5 min max)
 .PHONY: rping
@@ -646,6 +654,7 @@ test: ensuretarget
 .PHONY: gotools
 gotools:
 	$(GO) get -tool go.uber.org/mock/mockgen@latest
+	$(GO) get -tool golang.org/x/vuln/cmd/govulncheck@latest
 	$(GO) install github.com/jstemmer/go-junit-report/v2@latest
 	$(GO) install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
 	$(GO) install github.com/mikefarah/yq/v4@latest

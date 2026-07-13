@@ -32,10 +32,10 @@ RELEASE=$(shell cat RELEASE)
 PKGNAME=${LCVENDOR}-${PROJECT}
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # Target directory
-TARGETDIR=$(CURRENTDIR)target
+TARGETDIR=target
 
 # Directory where to store binary utility tools
 BINUTIL=$(TARGETDIR)/binutil
@@ -43,7 +43,7 @@ BINUTIL=$(TARGETDIR)/binutil
 # GO lang path
 ifeq ($(GOPATH),)
 	# extract the GOPATH
-	GOPATH=$(firstword $(subst /src/, ,$(CURRENTDIR)))
+	GOPATH=$(shell echo "$(CURDIR)" | sed 's|/src/.*||')
 endif
 
 # Add the GO binary dir in the PATH
@@ -155,11 +155,11 @@ DOCKERCOMPOSECMD=COMPOSE_PROJECT_NAME=$(VENDOR) $(DOCKERCOMPOSE)
 DOCKERBUILDARG=--build-arg HOST_USER="$(shell id -u ${USER})" --build-arg HOST_GROUP="$(shell id -g ${USER})"
 
 # Common commands
-GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) $(shell which go)
+GO=GOPATH="$(GOPATH)" GOPRIVATE=$(CVSPATH) $(shell which go)
 GOVERSION=${shell go version | grep -Eo '(go[0-9]+.[0-9]+)'}
 GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
-GODOC=GOPATH=$(GOPATH) $(shell which godoc)
+GODOC=GOPATH="$(GOPATH)" $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
 GOLANGCILINTVERSION=v2.12.2
 GOVULNCHECK=$(GO) tool govulncheck
@@ -194,7 +194,7 @@ GOPKGS=$(shell $(GO) list $(CMDDIR)/... $(SRCDIR)/...)
 ifeq ($(strip $(DEVMODE)),LOCAL)
 	TESTEXTRACMD=&& $(GO) tool cover -func=$(TARGETDIR)/report/coverage.out
 else
-	TESTEXTRACMD=2>&1 | tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
+	TESTEXTRACMD=2>&1 | tee >(PATH="$(GOPATH)/bin:$(PATH)" go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
 endif
 
 # Specify api test configuration files to execute (venom YAML files or * for all)
@@ -297,7 +297,7 @@ x:
 ## Run venom tests (https://github.com/ovh/venom)
 .PHONY: apitest
 apitest:
-	$(MAKE) venomtest API_TEST_DIR=monitoring API_TEST_URL=${RPISTAT_MONITORING_URL} API_TEST_FILE=api.yaml
+	$(MAKE) venomtest API_TEST_DIR=monitoring API_TEST_URL="${RPISTAT_MONITORING_URL}" API_TEST_FILE=api.yaml
 
 ## Full build and test sequence
 .PHONY: buildall
@@ -310,75 +310,75 @@ build:
 	$(GO) build \
 	-tags ${STATIC_TAG} \
 	-ldflags '-w -s -X main.programVersion=${VERSION} -X main.programRelease=${RELEASE} -extldflags "-fno-PIC ${STATIC_FLAG}"' \
-	-o ./target/${BINPATH}$(PROJECT) $(CMDDIR)
+	-o "./target/${BINPATH}$(PROJECT)" "$(CMDDIR)"
 
 ## Remove any build artifact
 .PHONY: clean
 clean:
-	rm -rf $(TARGETDIR)
+	rm -rf "$(TARGETDIR)"
 
 ## Validate JSON configuration files against the JSON schema
 .PHONY: confcheck
 confcheck:
-	${CONFCHECKCMD} resources/test/etc/${PROJECT}/config.json
-	${CONFCHECKCMD} resources/etc/${PROJECT}/config.json
+	${CONFCHECKCMD} "resources/test/etc/${PROJECT}/config.json"
+	${CONFCHECKCMD} "resources/etc/${PROJECT}/config.json"
 
 ## Generate the coverage report
 .PHONY: coverage
 coverage: ensuretarget
-	$(GO) tool cover -html=$(TARGETDIR)/report/coverage.out -o $(TARGETDIR)/report/coverage.html
+	$(GO) tool cover -html="$(TARGETDIR)/report/coverage.out" -o "$(TARGETDIR)/report/coverage.html"
 
 ## Build everything inside a Docker container
 .PHONY: dbuild
 dbuild: dockerdev
-	@mkdir -p $(TARGETDIR)
-	@rm -rf $(TARGETDIR)/*
-	@echo 0 > $(TARGETDIR)/make.exit
-	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' DOCKERTAG='$(DOCKERTAG)' $(CURRENTDIR)dockerbuild.sh
+	@mkdir -p "$(TARGETDIR)"
+	@rm -rf "$(TARGETDIR)/"*
+	@echo 0 > "$(TARGETDIR)/make.exit"
+	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' DOCKERTAG='$(DOCKERTAG)' "$(CURRENTDIR)dockerbuild.sh"
 	@exit `cat $(TARGETDIR)/make.exit`
 
 ## Build the DEB package for Debian-like Linux distributions
 .PHONY: deb
 deb:
-	rm -rf $(PATHDEBPKG)
+	rm -rf "$(PATHDEBPKG)"
 	$(MAKE) build GOBUILDENV=
-	$(MAKE) install DESTDIR=$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)
-	rm -f $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/etc/passwd
-	rm -f $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/$(DOCPATH)LICENSE
-	tar -zcvf $(PATHDEBPKG)/$(PKGNAME)_$(VERSION).orig.tar.gz -C $(PATHDEBPKG)/ $(PKGNAME)-$(VERSION)
-	cp -rf ./resources/debian $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian
-	mkdir -p $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/missing-sources
-	echo "// fake source for lintian" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/missing-sources/$(PROJECT).c
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#DATE#~/`date -R`/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#PKGNAME#~/$(PKGNAME)/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#VERSION#~/$(VERSION)/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#RELEASE#~/$(RELEASE)/" {} \;
-	echo $(BINPATH) > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(BINPATH)* $(BINPATH)" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
-	echo $(DOCPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(DOCPATH)* $(DOCPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
+	$(MAKE) install DESTDIR="$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)"
+	rm -f "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/etc/passwd"
+	rm -f "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/$(DOCPATH)LICENSE"
+	tar -zcvf "$(PATHDEBPKG)/$(PKGNAME)_$(VERSION).orig.tar.gz" -C "$(PATHDEBPKG)/" "$(PKGNAME)-$(VERSION)"
+	cp -rf ./resources/debian "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian"
+	mkdir -p "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/missing-sources"
+	echo "// fake source for lintian" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/missing-sources/$(PROJECT).c"
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#DATE#~/`date -R`/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#PKGNAME#~/$(PKGNAME)/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#VERSION#~/$(VERSION)/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#RELEASE#~/$(RELEASE)/" {} \;
+	echo "$(BINPATH)" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(BINPATH)* $(BINPATH)" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
+	echo "$(DOCPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(DOCPATH)* $(DOCPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
 ifneq ($(strip $(SYSTEMDPATH)),)
-	echo $(SYSTEMDPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(SYSTEMDPATH)* $(SYSTEMDPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
+	echo "$(SYSTEMDPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(SYSTEMDPATH)* $(SYSTEMDPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
 endif
 ifneq ($(strip $(CONFIGPATH)),)
-	echo $(CONFIGPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(CONFIGPATH)* $(CONFIGPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
+	echo "$(CONFIGPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(CONFIGPATH)* $(CONFIGPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
 endif
 ifneq ($(strip $(MANPATH)),)
-	echo $(MANPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(MANPATH)* $(MANPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
+	echo "$(MANPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(MANPATH)* $(MANPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
 endif
-	echo "statically-linked-binary [$(BINPATH)$(PROJECT)]" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	echo "new-package-should-close-itp-bug" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	echo "hardening-no-relro [$(BINPATH)$(PROJECT)]" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	echo "embedded-library [$(BINPATH)$(PROJECT)]: libyaml" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	cd $(PATHDEBPKG)/$(PKGNAME)-$(VERSION) && debuild -us -uc -d
+	echo "statically-linked-binary [$(BINPATH)$(PROJECT)]" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides"
+	echo "new-package-should-close-itp-bug" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides"
+	echo "hardening-no-relro [$(BINPATH)$(PROJECT)]" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides"
+	echo "embedded-library [$(BINPATH)$(PROJECT)]: libyaml" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides"
+	cd "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)" && debuild -us -uc -d
 
 ## Get the test dependencies
 .PHONY: deps
 deps: ensuretarget
-	curl --silent --show-error --fail --location "https://golangci-lint.run/install.sh" | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
+	curl --silent --show-error --fail --location "https://golangci-lint.run/install.sh" | sh -s -- -b "$(BINUTIL)" $(GOLANGCILINTVERSION)
 
 ## Build a docker container to run this service
 .PHONY: docker
@@ -387,7 +387,7 @@ docker: dockerdir dockerbuild
 ## Build the docker container in the target/DOCKER directory
 .PHONY: dockerbuild
 dockerbuild:
-	$(DOCKER) build --no-cache --tag=${LCVENDOR}/${PROJECT}$(DOCKERSUFFIX):latest $(PATHDOCKERPKG)
+	$(DOCKER) build --no-cache --tag="${LCVENDOR}/${PROJECT}$(DOCKERSUFFIX):latest" "$(PATHDOCKERPKG)"
 
 ## Delete the Docker image
 .PHONY: dockerdelete
@@ -397,7 +397,7 @@ dockerdelete:
 ## Build a base development Docker image
 .PHONY: dockerdev
 dockerdev:
-	$(DOCKER) build --pull --tag ${LCVENDOR}/dev_${PROJECT}:dev --file ./resources/docker/Dockerfile.dev ./resources/docker/
+	$(DOCKER) build --pull --tag "${LCVENDOR}/dev_${PROJECT}:dev" --file ./resources/docker/Dockerfile.dev ./resources/docker/
 
 ## Create the directory with docker files to be packaged
 .PHONY: dockerdir
@@ -408,10 +408,10 @@ endif
 ifneq ($(GOBUILDENV),)
 	$(MAKE) build GOBUILDENV=$(LINUXGOBUILDENV)
 endif
-	rm -rf $(PATHDOCKERPKG)
-	$(MAKE) install DESTDIR=$(PATHDOCKERPKG)
-	$(MAKE) installssl DESTDIR=$(PATHDOCKERPKG)
-	cp resources/docker/Dockerfile.run $(PATHDOCKERPKG)/Dockerfile
+	rm -rf "$(PATHDOCKERPKG)"
+	$(MAKE) install DESTDIR="$(PATHDOCKERPKG)"
+	$(MAKE) installssl DESTDIR="$(PATHDOCKERPKG)"
+	cp resources/docker/Dockerfile.run "$(PATHDOCKERPKG)/Dockerfile"
 
 ## Login into Docker AWS ECR
 .PHONY: ecrlogin
@@ -423,7 +423,7 @@ else
 ifeq ($(shell aws --version 2>&1 | cut -d " " -f1 | cut -d "/" -f2 | cut -d "." -f1), 1)
 	$(shell aws $(ECR_PROFILE) ecr get-login --no-include-email --region $(AWS_DEFAULT_REGION) | sed 's|https://||')
 else
-	aws $(ECR_PROFILE) ecr get-login-password --region $(AWS_DEFAULT_REGION) | $(DOCKER) login --password-stdin --username AWS $(ECR_REGISTRY)
+	aws "$(ECR_PROFILE)" ecr get-login-password --region $(AWS_DEFAULT_REGION) | $(DOCKER) login --password-stdin --username AWS $(ECR_REGISTRY)
 endif
 endif
 
@@ -448,32 +448,32 @@ dockerpush:
 ## Test docker container
 .PHONY: dockertest
 dockertest: dockertestenv dockerdev
-	test -f "$(BINUTIL)/dockerize" || curl --silent --show-error --fail --location https://github.com/jwilder/dockerize/releases/download/${DOCKERIZEVERSION}/dockerize-linux-$(DOCKERARCH)-${DOCKERIZEVERSION}.tar.gz | tar -xz -C $(BINUTIL)
-	@echo 0 > $(TARGETDIR)/make.exit
+	test -f "$(BINUTIL)/dockerize" || curl --silent --show-error --fail --location "https://github.com/jwilder/dockerize/releases/download/${DOCKERIZEVERSION}/dockerize-linux-$(DOCKERARCH)-${DOCKERIZEVERSION}.tar.gz" | tar -xz -C "$(BINUTIL)"
+	@echo 0 > "$(TARGETDIR)/make.exit"
 	$(DOCKERCOMPOSECMD) down --volumes || true
 	$(DOCKERCOMPOSECMD) build $(DOCKERBUILDARG)
-	$(DOCKERCOMPOSECMD) run ${PROJECT}_integration || echo $${?} > $(TARGETDIR)/make.exit
+	$(DOCKERCOMPOSECMD) run ${PROJECT}_integration || echo $${?} > "$(TARGETDIR)/make.exit"
 	$(DOCKERCOMPOSECMD) down --rmi local --volumes --remove-orphans || true
 	@exit `cat $(TARGETDIR)/make.exit`
 
 ## Run the integration tests
 .PHONY: dockertestenv
 dockertestenv: ensuretarget
-	@echo "RPISTAT_REMOTECONFIGPROVIDER=envvar" > $(TARGETDIR)/rpistat.integration.env
-	@echo "RPISTAT_REMOTECONFIGDATA=$(shell cat resources/test/integration/rpistat/config.json | base64 | tr -d \\n)" >> $(TARGETDIR)/rpistat.integration.env
+	@echo "RPISTAT_REMOTECONFIGPROVIDER=envvar" > "$(TARGETDIR)/rpistat.integration.env"
+	@echo "RPISTAT_REMOTECONFIGDATA=$(shell cat resources/test/integration/rpistat/config.json | base64 | tr -d \\n)" >> "$(TARGETDIR)/rpistat.integration.env"
 
 ## Create the trget directories if missing
 .PHONY: ensuretarget
 ensuretarget:
-	@mkdir -p $(TARGETDIR)/test
-	@mkdir -p $(TARGETDIR)/report
-	@mkdir -p $(BINUTIL)
+	@mkdir -p "$(TARGETDIR)/test"
+	@mkdir -p "$(TARGETDIR)/report"
+	@mkdir -p "$(BINUTIL)"
 
 ## Format the source code
 .PHONY: format
 format:
-	@find $(CMDDIR) -type f -name "*.go" -exec $(GOFMT) -s -w {} \;
-	@find $(SRCDIR) -type f -name "*.go" -exec $(GOFMT) -s -w {} \;
+	@find "$(CMDDIR)" -type f -name "*.go" -exec $(GOFMT) -s -w {} \;
+	@find "$(SRCDIR)" -type f -name "*.go" -exec $(GOFMT) -s -w {} \;
 
 ## Generate test mocks
 .PHONY: generate
@@ -498,44 +498,44 @@ gendoc:
 ## Install this application
 .PHONY: install
 install: uninstall
-	mkdir -p $(PATHINSTBIN)
-	cp -r ./target/${BINPATH}* $(PATHINSTBIN)
-	find $(PATHINSTBIN) -type d -exec chmod 755 {} \;
-	find $(PATHINSTBIN) -type f -exec chmod 755 {} \;
-	mkdir -p $(PATHINSTDOC)
-	cp -f ./LICENSE $(PATHINSTDOC)
-	cp -f ./README.md $(PATHINSTDOC)
-	cp -f ./VERSION $(PATHINSTDOC)
-	cp -f ./RELEASE $(PATHINSTDOC)
-	cp -f ./doc/*.md $(PATHINSTDOC)
-	chmod -R 644 $(PATHINSTDOC)*
+	mkdir -p "$(PATHINSTBIN)"
+	cp -r "./target/${BINPATH}"* "$(PATHINSTBIN)"
+	find "$(PATHINSTBIN)" -type d -exec chmod 755 {} \;
+	find "$(PATHINSTBIN)" -type f -exec chmod 755 {} \;
+	mkdir -p "$(PATHINSTDOC)"
+	cp -f ./LICENSE "$(PATHINSTDOC)"
+	cp -f ./README.md "$(PATHINSTDOC)"
+	cp -f ./VERSION "$(PATHINSTDOC)"
+	cp -f ./RELEASE "$(PATHINSTDOC)"
+	cp -f ./doc/*.md "$(PATHINSTDOC)"
+	chmod -R 644 "$(PATHINSTDOC)"*
 ifneq ($(strip $(INITPATH)),)
-	mkdir -p $(PATHINSTINIT)
-	cp -rf ./resources/${INITPATH}* $(PATHINSTINIT)
-	find $(PATHINSTINIT) -type d -exec chmod 755 {} \;
-	find $(PATHINSTINIT) -type f -exec chmod 644 {} \;
+	mkdir -p "$(PATHINSTINIT)"
+	cp -rf "./resources/${INITPATH}"* "$(PATHINSTINIT)"
+	find "$(PATHINSTINIT)" -type d -exec chmod 755 {} \;
+	find "$(PATHINSTINIT)" -type f -exec chmod 644 {} \;
 endif
 ifneq ($(strip $(SYSTEMDPATH)),)
-	mkdir -p $(PATHINSTSYSTEMD)
-	cp -rf ./resources/${SYSTEMDPATH}* $(PATHINSTSYSTEMD)
-	find $(PATHINSTSYSTEMD) -type d -exec chmod 755 {} \;
-	find $(PATHINSTSYSTEMD) -type f -exec chmod 755 {} \;
+	mkdir -p "$(PATHINSTSYSTEMD)"
+	cp -rf "./resources/${SYSTEMDPATH}"* "$(PATHINSTSYSTEMD)"
+	find "$(PATHINSTSYSTEMD)" -type d -exec chmod 755 {} \;
+	find "$(PATHINSTSYSTEMD)" -type f -exec chmod 755 {} \;
 endif
 ifneq ($(strip $(CONFIGPATH)),)
-	mkdir -p $(PATHINSTCFG)
-	touch -c $(PATHINSTCFG)*
-	cp -rf ./resources/${CONFIGPATH}* $(PATHINSTCFG)
-	find $(PATHINSTCFG) -type d -exec chmod 755 {} \;
-	find $(PATHINSTCFG) -type f -exec chmod 644 {} \;
+	mkdir -p "$(PATHINSTCFG)"
+	touch -c "$(PATHINSTCFG)"*
+	cp -rf "./resources/${CONFIGPATH}"* "$(PATHINSTCFG)"
+	find "$(PATHINSTCFG)" -type d -exec chmod 755 {} \;
+	find "$(PATHINSTCFG)" -type f -exec chmod 644 {} \;
 endif
 ifneq ($(strip $(MANPATH)),)
-	mkdir -p $(PATHINSTMAN)
-	cat ./resources/${MANPATH}${PROJECT}.1 | gzip -9 > $(PATHINSTMAN)${PROJECT}.1.gz
-	find $(PATHINSTMAN) -type f -exec chmod 644 {} \;
+	mkdir -p "$(PATHINSTMAN)"
+	cat "./resources/${MANPATH}${PROJECT}.1" | gzip -9 > "$(PATHINSTMAN)${PROJECT}.1.gz"
+	find "$(PATHINSTMAN)" -type f -exec chmod 644 {} \;
 endif
 # only write the nonroot passwd file for staged installs (e.g. Docker scratch image), never on a live system
 ifneq ($(strip $(DESTDIR)),)
-	echo 'nonroot:*:65532:65532:nonroot:/nonexistent:/bin/false' > $(DESTDIR)/etc/passwd
+	echo 'nonroot:*:65532:65532:nonroot:/nonexistent:/bin/false' > "$(DESTDIR)/etc/passwd"
 endif
 
 ## Install TLS root CA certificates
@@ -544,31 +544,31 @@ installssl:
 ifneq ($(strip $(SSLCONFIGPATH)),)
 	# add system root CA certificates
 	for CERT in ${CACERTPATH} ; do \
-		test -f $${CERT} && \
-		mkdir -p $${DESTDIR}$$(dirname $${CERT}) && \
-		cp $${CERT} $${DESTDIR}$${CERT} && \
+		test -f "$${CERT}" && \
+		mkdir -p "$${DESTDIR}$$(dirname "$${CERT}")" && \
+		cp "$${CERT}" "$${DESTDIR}$${CERT}" && \
 		break ; \
 	done
 	# add custom CA certificates
-	mkdir -p $(PATHINSTSSLCFG)
-	cp -r ./resources/${SSLCONFIGPATH}* $(PATHINSTSSLCFG)
-	rm $(PATHINSTSSLCFG)certs/.keep
-	find $(PATHINSTSSLCFG) -type d -exec chmod 755 {} \;
-	find $(PATHINSTSSLCFG) -type f -exec chmod 644 {} \;
+	mkdir -p "$(PATHINSTSSLCFG)"
+	cp -r "./resources/${SSLCONFIGPATH}"* "$(PATHINSTSSLCFG)"
+	rm "$(PATHINSTSSLCFG)certs/.keep"
+	find "$(PATHINSTSSLCFG)" -type d -exec chmod 755 {} \;
+	find "$(PATHINSTSSLCFG)" -type f -exec chmod 644 {} \;
 endif
 
 ## Check dependencies for known vulnerabilities
 .PHONY: govulncheck
 govulncheck:
 	@echo -e "\n\n>>> START: Vulnerability check <<<\n\n"
-	$(GOVULNCHECK) $(CMDDIR)/... $(SRCDIR)/...
+	$(GOVULNCHECK) "$(CMDDIR)/..." "$(SRCDIR)/..."
 	@echo -e "\n\n>>> END: Vulnerability check <<<\n\n"
 
 ## Execute multiple linter tools
 .PHONY: linter
 linter:
 	@echo -e "\n\n>>> START: Static code analysis <<<\n\n"
-	$(GOLANGCILINT) run $(CMDDIR)/... $(SRCDIR)/...
+	$(GOLANGCILINT) run "$(CMDDIR)/..." "$(SRCDIR)/..."
 	@echo -e "\n\n>>> END: Static code analysis <<<\n\n"
 
 ## Download dependencies
@@ -579,7 +579,7 @@ mod: gotools
 ## Test the OpenAPI specification against the real deployed service
 .PHONY: openapitest
 openapitest:
-	$(MAKE) schemathesistest API_TEST_URL=${RPISTAT_MONITORING_URL} OPENAPI_FILE=openapi_monitoring.yaml
+	$(MAKE) schemathesistest API_TEST_URL="${RPISTAT_MONITORING_URL}" OPENAPI_FILE=openapi_monitoring.yaml
 
 ## Ping the deployed service to check if the correct deployed container is alive
 .PHONY: ping
@@ -598,9 +598,10 @@ rping:
 ## Build the RPM package for RedHat-like Linux distributions
 .PHONY: rpm
 rpm:
-	rm -rf $(PATHRPMPKG)
-	mkdir -p $(PATHRPMPKG)/.rpmdb
-	rpm --initdb --dbpath $(PATHRPMPKG)/.rpmdb
+	@test $(words $(CURDIR)) -eq 1 || { echo "ERROR: rpmbuild does not support spaces in the project path: $(CURDIR)"; exit 1; }
+	rm -rf "$(PATHRPMPKG)"
+	mkdir -p "$(PATHRPMPKG)/.rpmdb"
+	rpm --initdb --dbpath "$(PATHRPMPKG)/.rpmdb"
 	$(MAKE) build
 	rpmbuild \
 	--define "_topdir $(PATHRPMPKG)" \
@@ -663,8 +664,8 @@ gotools:
 ## Remove all installed files (excluding configuration files)
 .PHONY: uninstall
 uninstall:
-	rm -rf $(PATHINSTBIN)$(PROJECT)
-	rm -rf $(PATHINSTDOC)
+	rm -rf "$(PATHINSTBIN)$(PROJECT)"
+	rm -rf "$(PATHINSTDOC)"
 
 ## Update everything
 .PHONY: updateall
@@ -693,7 +694,7 @@ updatemod: mod
 ## Run venom tests (https://github.com/ovh/venom)
 .PHONY: venomtest
 venomtest:
-	@mkdir -p $(TARGETDIR)/report/${DEPLOY_ENV}/venom/$(API_TEST_DIR)
+	@mkdir -p "$(TARGETDIR)/report/${DEPLOY_ENV}/venom/$(API_TEST_DIR)"
 	venom run \
 		--var rpistat.url="${API_TEST_URL}" \
 		--var rpistat.version="${VERSION}" \

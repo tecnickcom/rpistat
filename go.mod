@@ -10,8 +10,8 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
-	github.com/tecnickcom/nurago v1.154.3
-	golang.org/x/sys v0.47.0
+	github.com/tecnickcom/nurago v1.154.7
+	golang.org/x/sys v0.48.0
 )
 
 require (

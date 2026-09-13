@@ -1,0 +1,20 @@
+# Configuration for the schemathesis contract tests run by `make openapitest`.
+#
+# The check selection lives here rather than on the schemathesis command line:
+# a --checks flag on the command line replaces the settings below, including
+# any per-operation overrides, so the two cannot be combined.
+
+[checks]
+not_a_server_error.enabled = true
+status_code_conformance.enabled = true
+content_type_conformance.enabled = true
+response_headers_conformance.enabled = true
+response_schema_conformance.enabled = true
+negative_data_rejection.enabled = true
+positive_data_acceptance.enabled = true
+missing_required_header.enabled = true
+unsupported_method.enabled = true
+allow_header_conformance.enabled = true
+use_after_free.enabled = true
+ensure_resource_availability.enabled = true
+ignored_auth.enabled = true

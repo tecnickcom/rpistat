@@ -7,10 +7,10 @@ toolchain go1.27.3
 require (
 	github.com/prometheus/client_golang v1.25.0
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10
+	github.com/spf13/pflag v1.1.0
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
-	github.com/tecnickcom/nurago v1.156.6
+	github.com/tecnickcom/nurago v1.157.0
 	golang.org/x/sys v0.49.0
 )
 
